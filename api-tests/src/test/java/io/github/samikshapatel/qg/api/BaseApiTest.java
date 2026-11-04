@@ -31,7 +31,8 @@ abstract class BaseApiTest {
         spec = new RequestSpecBuilder()
                 .setBaseUri(Config.apiBaseUrl())
                 .setContentType(ContentType.JSON)
-                .setAccept(ContentType.JSON)
+                // Restful-Booker matches Accept exactly; RestAssured's ContentType.JSON sends a list and gets 418.
+                .setAccept("application/json")
                 .setConfig(config)
                 .build();
     }
