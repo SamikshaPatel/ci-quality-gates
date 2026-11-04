@@ -1,6 +1,6 @@
 target/
-gate-results/
-evidence/
+/gate-results/
+/evidence/
 *.iml
 .idea/
 .vscode/
