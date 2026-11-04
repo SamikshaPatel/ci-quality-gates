@@ -1,0 +1,9 @@
+QUALITY GATE BREACHED
+gate: smoke
+reason: Smoke gate breached: pass rate 83.3%, below 100% threshold (1 failed, classified CODE)
+classification: CODE
+pass_rate: 83.3 (threshold 100.0)
+owner: PR author
+runbook: docs/runbooks/smoke-failure.md
+next_step: Reproduce locally with: mvn -pl api-tests,ui-tests test -Dgroups=smoke -Dtier=smoke — then fix the change in this PR.
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$SmokeCodeFault#pingContractChanged | FAILED | CODE | Ping contract changed: unexpected status code ==> expected: <200> but was: <201>

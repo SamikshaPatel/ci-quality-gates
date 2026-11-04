@@ -1,0 +1,30 @@
+{
+  "tier" : "smoke",
+  "verdict" : "FAIL",
+  "attempt" : 1,
+  "executed" : 6,
+  "passed" : 5,
+  "failed" : 1,
+  "flaky" : 0,
+  "skipped" : 0,
+  "effectivePassed" : 5,
+  "passRate" : 83.3,
+  "flakeRate" : 0.0,
+  "passRateThreshold" : 100.0,
+  "maxFlakeRate" : null,
+  "classification" : "CODE",
+  "reason" : "Smoke gate breached: pass rate 83.3%, below 100% threshold (1 failed, classified CODE)",
+  "action" : "Hard stop: build marked failed, PR blocked. Later gates skipped. No quarantine (smoke tests are never quarantined).",
+  "owner" : "PR author",
+  "runbook" : "docs/runbooks/smoke-failure.md",
+  "nextStep" : "Reproduce locally with: mvn -pl api-tests,ui-tests test -Dgroups=smoke -Dtier=smoke — then fix the change in this PR.",
+  "failures" : [ {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$SmokeCodeFault#pingContractChanged",
+    "status" : "FAILED",
+    "classification" : "CODE",
+    "message" : "Ping contract changed: unexpected status code ==> expected: <200> but was: <201>"
+  } ],
+  "flakyTests" : [ ],
+  "newlyQuarantined" : [ ],
+  "firstAttemptReason" : null
+}
