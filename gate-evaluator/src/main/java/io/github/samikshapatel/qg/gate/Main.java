@@ -117,6 +117,11 @@ public final class Main {
         String markdown = new RunReport(System.getenv()).render(results, review);
         Files.writeString(out.resolve("run-report.md"), markdown);
 
+        // One summary line per run for the run-history site (newest first, trends over time).
+        int quarantineSize = QuarantineStore.load(Path.of(opts.getOrDefault("quarantine", "quarantine.json"))).size();
+        RunHistory.Entry entry = RunHistory.entry(results, quarantineSize, System.getenv(), java.time.Instant.now());
+        MAPPER.writeValue(out.resolve("history-entry.json").toFile(), entry);
+
         String summary = System.getenv("GITHUB_STEP_SUMMARY");
         if (summary != null && !summary.isBlank()) {
             Files.writeString(Path.of(summary), markdown + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);

@@ -89,6 +89,14 @@ jobs:
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report
 
+      - name: Publish to the run-history site
+        if: >-
+          always() && hashFiles('gate-results/history-entry.json') != ''
+          && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: scripts/publish-history.sh
+
       - name: Post run report on the PR
         if: always() && github.event_name == 'pull_request' && hashFiles('gate-results/run-report.md') != ''
         uses: marocchino/sticky-pull-request-comment@v2

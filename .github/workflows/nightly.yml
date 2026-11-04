@@ -61,6 +61,12 @@ jobs:
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report
 
+      - name: Publish to the run-history site
+        if: always() && hashFiles('gate-results/history-entry.json') != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: scripts/publish-history.sh
+
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4

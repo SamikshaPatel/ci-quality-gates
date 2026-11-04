@@ -76,6 +76,34 @@ class RunReportTest {
     }
 
     @Test
+    void historyEntrySummarisesTheRun() {
+        Map<String, GateResult> results = new LinkedHashMap<>();
+        results.put("smoke", smokeEnvFailure());
+        Map<String, String> runEnv = new java.util.HashMap<>(env);
+        runEnv.put("RUN_STARTED_AT", "1793800000");
+        runEnv.put("DEMO_SCENARIO", "env-down");
+        RunHistory.Entry e = RunHistory.entry(results, 2, runEnv, java.time.Instant.ofEpochSecond(1793800250));
+
+        assertEquals("FAILED", e.verdict);
+        assertEquals("42-1", e.id);
+        assertTrue(e.folder.endsWith("_run42-1"), e.folder);
+        assertEquals(250L, e.durationSec);
+        assertEquals("env-down", e.scenario);
+        assertEquals("DevOps", e.owner);
+        assertEquals(2, e.quarantineSize);
+        assertEquals(80.0, e.gates.get("smoke").passRate);
+        assertFalse(e.gates.containsKey("critical"));
+    }
+
+    @Test
+    void reportLinksToRunHistorySite() {
+        Map<String, GateResult> results = new LinkedHashMap<>();
+        results.put("smoke", smokeEnvFailure());
+        String md = new RunReport(env).render(results, Optional.empty());
+        assertTrue(md.contains("[Run history](https://samikshapatel.github.io/ci-quality-gates/)"));
+    }
+
+    @Test
     void failureFileNamesGateValueAndThreshold() {
         String text = RunReport.failureFile(smokeEnvFailure());
         assertTrue(text.startsWith("QUALITY GATE BREACHED\ngate: smoke\n"));

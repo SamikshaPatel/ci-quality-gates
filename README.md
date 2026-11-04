@@ -38,6 +38,7 @@ The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.
 | Each failure path can be shown on demand | Actions → **Quality gates** → **Run workflow** → pick a scenario |
 | Decisions are reasoned | [docs/adr/](docs/adr) |
 | Every failure has a runbook | [docs/runbooks/](docs/runbooks) |
+| Every run, newest first, with trends | [Run history site](https://samikshapatel.github.io/ci-quality-gates/) |
 | Frozen results of each scenario | [docs/evidence/](docs/evidence) |
 | The contract is not tied to one CI tool | [Jenkinsfile](Jenkinsfile) calls the same scripts |
 
@@ -58,7 +59,7 @@ The scenarios use [deliberate fault tests](docs/adr/0005-deliberate-fault-tests.
 
 ## The run report
 
-Every run writes one report: in the job summary, as a sticky PR comment, and as `gate-results/run-report.md`. It says what happened, what the pipeline did, and who acts next. On a breach, `gate-results/quality-gate-failure.txt` carries the same facts for scripts.
+Every run writes one report: in the job summary, as a sticky PR comment, as `gate-results/run-report.md`, and on the [run-history site](https://samikshapatel.github.io/ci-quality-gates/). It says what happened, what the pipeline did, and who acts next. On a breach, `gate-results/quality-gate-failure.txt` carries the same facts for scripts.
 
 | Failure | Pipeline action | Owner |
 |---|---|---|
@@ -87,7 +88,8 @@ test-support/           quarantine skipping, tier tags, deterministic fault mark
 gate-evaluator/         reads Surefire XML, applies the gates, writes the run report, opens Jira tickets
 api-tests/              13 RestAssured tests + deliberate fault tests
 ui-tests/               12 Playwright tests
-scripts/                run-gate.sh, run-regression.sh (shared by GitHub Actions and Jenkins)
+scripts/                run-gate.sh, run-regression.sh (shared by GitHub Actions and Jenkins), publish-history.sh
+site/                   the run-history site (index.html, run.html), published to gh-pages
 .github/workflows/      pr.yml (gates + scenarios), nightly.yml (quarantine review), release.yml (evidence pack)
 docs/                   test plan, ADRs, runbooks, evidence
 ```
@@ -96,6 +98,7 @@ docs/                   test plan, ADRs, runbooks, evidence
 
 - **Quality gates** (`pr.yml`) runs on every PR and from the Run workflow button. Smoke runs first, then the critical tier, then the non-critical tier. It posts the run report on the PR and uploads evidence.
 - **Nightly** (`nightly.yml`) runs the full gates on `main`, then reviews quarantine: quarantined tests run and build a green streak. A test is released after 7 clean nights, and one older than 14 days fails the run.
+- **Run history** (GitHub Pages, `gh-pages` branch): every run publishes its report to `runs/<date-time>_run<id>/`. The site lists all runs newest first, with filters for trigger, real or demo run, and result, plus trend charts of non-critical pass and flake rates and pipeline duration against the 10-minute budget. Demo runs are excluded from the trends. This plays the role a results server such as ReportPortal or Allure TestOps plays in larger teams.
 - **Release** (`release.yml`) runs on a `v*` tag. It runs the gates on the tagged commit and publishes a GitHub release with an evidence pack attached.
 
 ## Setup

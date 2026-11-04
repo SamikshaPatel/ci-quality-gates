@@ -4,6 +4,10 @@ description: Java, the API under test, the build with evaluator unit tests, and 
 runs:
   using: composite
   steps:
+    - name: Record the start time (for the runtime budget)
+      shell: bash
+      run: echo "RUN_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
     - uses: actions/setup-java@v4
       with:
         distribution: temurin

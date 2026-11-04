@@ -23,6 +23,17 @@ public class RunReport {
         this.env = env;
     }
 
+    /** PASSED only when every gate ran and passed; FAILED when any gate failed; otherwise INCOMPLETE. */
+    public static String overall(Map<String, GateResult> results) {
+        boolean anyFail = ORDER.stream().map(results::get)
+                .anyMatch(r -> r != null && r.verdict == GateResult.Verdict.FAIL);
+        if (anyFail) {
+            return "FAILED";
+        }
+        boolean allPassed = ORDER.stream().allMatch(t -> results.containsKey(t) && results.get(t).passed());
+        return allPassed ? "PASSED" : "INCOMPLETE";
+    }
+
     public String render(Map<String, GateResult> results, Optional<QuarantineReview.Summary> review) {
         StringBuilder md = new StringBuilder();
         Optional<GateResult> firstFailure = ORDER.stream()
@@ -81,6 +92,10 @@ public class RunReport {
         md.append(link("Run and artifacts (Allure results, Playwright traces, Surefire XML)", runUrl()));
         md.append(" · ").append(link("CI contract", blob("CI_CONTRACT.md")));
         md.append(" · ").append(link("Gate config", blob("quality-gates.yml")));
+        String history = historyUrl();
+        if (history != null) {
+            md.append(" · ").append(link("Run history", history));
+        }
         md.append('\n');
         return md.toString();
     }
@@ -160,6 +175,16 @@ public class RunReport {
         String repo = env.get("GITHUB_REPOSITORY");
         String run = env.get("GITHUB_RUN_ID");
         return server == null || repo == null || run == null ? null : server + "/" + repo + "/actions/runs/" + run;
+    }
+
+    /** The GitHub Pages run-history site: https://&lt;owner&gt;.github.io/&lt;repo&gt;/ */
+    private String historyUrl() {
+        String repo = env.get("GITHUB_REPOSITORY");
+        if (repo == null || !repo.contains("/")) {
+            return null;
+        }
+        String owner = repo.substring(0, repo.indexOf('/')).toLowerCase();
+        return "https://" + owner + ".github.io/" + repo.substring(repo.indexOf('/') + 1) + "/";
     }
 
     private String blob(String path) {
