@@ -36,6 +36,13 @@ class SurefireParserTest {
     }
 
     @Test
+    void shortMessageSkipsRestAssuredPreamble() {
+        TestResult t = new TestResult("a#b", "a", "b", TestResult.Status.FAILED, "java.lang.AssertionError",
+                "1 expectation failed.\nExpected status code <200> but was <418>.\n");
+        assertEquals("Expected status code <200> but was <418>.", t.shortMessage());
+    }
+
+    @Test
     void errorsCountAsFailuresAndSkipsAreSkipped() {
         assertEquals(TestResult.Status.FAILED, byMethod.get("errors").status());
         assertEquals(TestResult.Status.SKIPPED, byMethod.get("skippedOne").status());

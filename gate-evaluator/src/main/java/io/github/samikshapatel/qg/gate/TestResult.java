@@ -18,11 +18,17 @@ public record TestResult(String id, String className, String method, Status stat
         return ((failureType == null ? "" : failureType) + " " + (message == null ? "" : message)).trim();
     }
 
-    /** First line of the failure message, trimmed for reports. */
+    /**
+     * The most useful line of the failure, trimmed for reports. Skips RestAssured's
+     * "1 expectation failed." preamble so the report shows the actual expectation.
+     */
     public String shortMessage() {
-        String text = failureText();
-        int newline = text.indexOf('\n');
-        String first = newline >= 0 ? text.substring(0, newline) : text;
-        return first.length() > 160 ? first.substring(0, 157) + "..." : first;
+        String source = (message == null || message.isBlank()) ? (failureType == null ? "" : failureType) : message;
+        String line = source.lines()
+                .map(String::trim)
+                .filter(l -> !l.isEmpty() && !l.matches("\\d+ expectations? failed\\.?"))
+                .findFirst()
+                .orElse(source.trim());
+        return line.length() > 160 ? line.substring(0, 157) + "..." : line;
     }
 }

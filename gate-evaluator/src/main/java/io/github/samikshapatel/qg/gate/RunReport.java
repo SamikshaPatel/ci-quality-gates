@@ -92,7 +92,7 @@ public class RunReport {
             md.append("- **Failure classification:** `").append(r.classification).append("`\n");
         }
         md.append("- **Pipeline action:** ").append(r.action).append('\n');
-        md.append("- **Owner:** ").append(r.owner).append(" (per CI_CONTRACT.md)\n");
+        md.append("- **Owner:** ").append(r.owner).append(" — per CI_CONTRACT.md\n");
         md.append("- **Next step:** ").append(r.nextStep).append('\n');
         md.append("- **Runbook:** ").append(link(r.runbook, blob(r.runbook))).append("\n\n");
         if (!r.failures.isEmpty()) {
