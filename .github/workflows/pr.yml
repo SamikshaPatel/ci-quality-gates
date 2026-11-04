@@ -28,7 +28,7 @@ permissions:
   pull-requests: write   # post the run report as a PR comment
 
 concurrency:
-  group: gates-${{ github.ref }}
+  group: gates-${{ github.ref }}-${{ inputs.scenario || 'none' }}
   cancel-in-progress: true
 
 jobs:
