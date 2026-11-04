@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Run Report</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← All runs</a>
+  <header>
+    <h1 id="title">Run report</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+  <article class="report" id="report"><p class="empty">Loading…</p></article>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const folder = params.get('run') || '';
+const report = document.getElementById('report');
+
+const add = (parent, text, href) => {
+  const node = href ? Object.assign(document.createElement('a'), { href, textContent: text })
+                    : Object.assign(document.createElement('span'), { textContent: text });
+  parent.append(node);
+};
+
+if (!/^[\w.-]+$/.test(folder)) {
+  report.replaceChildren(Object.assign(document.createElement('p'), { className: 'empty', textContent: 'Unknown run.' }));
+} else {
+  const base = `runs/${folder}/`;
+  Promise.all([
+    fetch(base + 'history-entry.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(base + 'run-report.md').then(r => r.ok ? r.text() : null).catch(() => null)
+  ]).then(([entry, md]) => {
+    if (entry) {
+      const d = new Date(entry.date);
+      document.getElementById('title').textContent =
+        `${entry.verdict === 'PASSED' ? 'Passed' : entry.verdict === 'FAILED' ? 'Blocked' : 'Incomplete'} · ${d.toLocaleString()}`;
+      document.title = `Run ${entry.id}`;
+      const meta = document.getElementById('meta');
+      add(meta, `Run ${entry.id}`);
+      add(meta, entry.scenario && entry.scenario !== 'none' ? `Demo scenario: ${entry.scenario}` : 'Real run');
+      if (entry.branch) add(meta, `Branch ${entry.branch}`);
+      if (entry.runUrl) add(meta, 'Open in GitHub Actions', entry.runUrl);
+      add(meta, 'Raw result (JSON)', base + 'history-entry.json');
+    }
+    if (md === null) {
+      report.replaceChildren(Object.assign(document.createElement('p'), { className: 'empty', textContent: 'Report not found.' }));
+      return;
+    }
+    const html = (typeof marked !== 'undefined') ? marked.parse(md) : null;
+    if (html && typeof DOMPurify !== 'undefined') {
+      report.innerHTML = DOMPurify.sanitize(html);
+    } else {
+      report.replaceChildren(Object.assign(document.createElement('pre'), { textContent: md }));
+    }
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quality Gate Run History</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Quality gate run history</h1>
+    <p>Every pipeline run of <a href="https://github.com/SamikshaPatel/ci-quality-gates">ci-quality-gates</a>, newest first. Each row links to that run's full report.</p>
+    <nav>
+      <a href="https://github.com/SamikshaPatel/ci-quality-gates/blob/main/CI_CONTRACT.md">What green means</a>
+      <a href="https://github.com/SamikshaPatel/ci-quality-gates/blob/main/quality-gates.yml">Gate config</a>
+      <a href="https://github.com/SamikshaPatel/ci-quality-gates/actions">GitHub Actions</a>
+    </nav>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Summary of real runs"></section>
+
+  <section class="charts">
+    <div class="card">
+      <h2>Non-critical tier: pass rate and flake rate</h2>
+      <p class="sub">Real runs only. Dashed lines are the gate limits from quality-gates.yml.</p>
+      <div class="chart-box"><canvas id="rateChart" aria-label="Pass and flake rate over time"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Pipeline duration</h2>
+      <p class="sub">Real runs only. The dashed line is the 10-minute runtime budget.</p>
+      <div class="chart-box"><canvas id="durationChart" aria-label="Pipeline duration over time"></canvas></div>
+    </div>
+  </section>
+
+  <div class="filters">
+    <label>Trigger
+      <select id="fTrigger">
+        <option value="all">All</option>
+        <option value="pull_request">Pull request</option>
+        <option value="workflow_dispatch">Manual</option>
+        <option value="schedule">Nightly</option>
+        <option value="push">Release</option>
+      </select>
+    </label>
+    <label>Runs
+      <select id="fKind">
+        <option value="all">All</option>
+        <option value="real">Real runs only</option>
+        <option value="demo">Demo scenarios only</option>
+      </select>
+    </label>
+    <label>Result
+      <select id="fResult">
+        <option value="all">All</option>
+        <option value="PASSED">Passed</option>
+        <option value="FAILED">Failed</option>
+      </select>
+    </label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>When</th><th>Trigger</th><th>Scenario</th><th>Branch</th><th>Commit</th>
+          <th>Smoke</th><th>Critical</th><th>Non-critical</th><th>Result</th><th>Duration</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const BUDGET_MIN = 10;
+const QUARANTINE_CAP = 5;
+let runs = [];
+
+const el = (tag, opts = {}, ...children) => {
+  const node = document.createElement(tag);
+  if (opts.className) node.className = opts.className;
+  if (opts.text !== undefined) node.textContent = opts.text;
+  if (opts.title) node.title = opts.title;
+  children.forEach(c => node.append(c));
+  return node;
+};
+
+const isReal = r => !r.scenario || r.scenario === 'none';
+const triggerLabel = r => ({
+  pull_request: r.pr ? `PR #${r.pr}` : 'Pull request',
+  workflow_dispatch: 'Manual',
+  schedule: 'Nightly',
+  push: 'Release',
+  jenkins: 'Jenkins'
+}[r.trigger] || r.trigger || '—');
+
+const fmtDuration = s => s == null ? '—' : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
+const fmtWhen = iso => {
+  const d = new Date(iso);
+  return [d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+          d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })];
+};
+const ago = iso => {
+  const mins = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return hrs < 48 ? `${hrs} h ago` : `${Math.round(hrs / 24)} days ago`;
+};
+
+function gateChip(g) {
+  if (!g) return el('span', { className: 'chip skip', text: '— skipped' });
+  if (g.verdict === 'PASS' && g.attempt > 1) {
+    return el('span', { className: 'chip warn', text: `✓ ${g.passRate}%`, title: 'Passed after quarantining flaky tests' });
+  }
+  if (g.verdict === 'PASS') return el('span', { className: 'chip pass', text: `✓ ${g.passRate}%` });
+  return el('span', { className: 'chip fail', text: `✗ ${g.passRate}%`, title: 'Gate failed' });
+}
+
+function resultChip(r) {
+  if (r.verdict === 'PASSED') return el('span', { className: 'chip pass', text: 'Passed' });
+  if (r.verdict === 'FAILED') return el('span', { className: 'chip fail', text: 'Blocked', title: r.reason || '' });
+  return el('span', { className: 'chip skip', text: 'Incomplete' });
+}
+
+function renderKpis() {
+  const box = document.getElementById('kpis');
+  box.replaceChildren();
+  const real = runs.filter(isReal);
+  const kpi = (label, value, note) => el('div', { className: 'kpi' },
+    el('div', { className: 'label', text: label }),
+    el('div', { className: 'value', text: value }),
+    el('div', { className: 'note', text: note }));
+
+  const latest = real[0];
+  box.append(kpi('Latest real run', latest ? (latest.verdict === 'PASSED' ? 'Passed' : 'Blocked') : '—',
+    latest ? `${triggerLabel(latest)} · ${ago(latest.date)}` : 'No real runs yet'));
+
+  const last20 = real.slice(0, 20);
+  const green = last20.filter(r => r.verdict === 'PASSED').length;
+  box.append(kpi('Green rate', last20.length ? `${Math.round(100 * green / last20.length)}%` : '—',
+    last20.length ? `${green} of the last ${last20.length} real runs` : 'No real runs yet'));
+
+  const q = latest ? latest.quarantineSize : 0;
+  box.append(kpi('Quarantine', `${q} of ${QUARANTINE_CAP}`, 'Tests skipped by PR gates, on main'));
+
+  const durations = real.map(r => r.durationSec).filter(d => d != null).sort((a, b) => a - b);
+  const median = durations.length ? durations[Math.floor(durations.length / 2)] : null;
+  box.append(kpi('Median duration', fmtDuration(median), `Budget ${BUDGET_MIN} min per PR run`));
+}
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function renderCharts() {
+  const real = runs.filter(isReal).slice().reverse(); // oldest → newest
+  const withRegression = real.filter(r => r.gates && r.gates.regression);
+  const labels = r => fmtWhen(r.date).join(' ');
+  const muted = cssVar('--muted'), line = cssVar('--line');
+  const base = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { labels: { color: muted, boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { color: muted, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: line } },
+      y: { ticks: { color: muted }, grid: { color: line } }
+    }
+  };
+
+  const rateBox = document.getElementById('rateChart').parentElement;
+  if (withRegression.length < 2 || typeof Chart === 'undefined') {
+    rateBox.replaceChildren(el('div', { className: 'empty', text: 'Trends appear after two real runs.' }));
+  } else {
+    const thr = withRegression.at(-1).gates.regression;
+    new Chart(document.getElementById('rateChart'), {
+      type: 'line',
+      data: {
+        labels: withRegression.map(labels),
+        datasets: [
+          { label: 'Pass rate', data: withRegression.map(r => r.gates.regression.passRate), borderColor: cssVar('--pass'), backgroundColor: cssVar('--pass'), tension: 0.2, pointRadius: 3 },
+          { label: 'Flake rate', data: withRegression.map(r => r.gates.regression.flakeRate), borderColor: cssVar('--warn'), backgroundColor: cssVar('--warn'), tension: 0.2, pointRadius: 3 },
+          { label: `Min pass ${thr.passRateThreshold}%`, data: withRegression.map(r => r.gates.regression.passRateThreshold), borderColor: cssVar('--pass'), borderDash: [6, 4], borderWidth: 1, pointRadius: 0 },
+          { label: `Max flake ${thr.maxFlakeRate}%`, data: withRegression.map(r => r.gates.regression.maxFlakeRate), borderColor: cssVar('--warn'), borderDash: [6, 4], borderWidth: 1, pointRadius: 0 }
+        ]
+      },
+      options: { ...base, scales: { ...base.scales, y: { ...base.scales.y, min: 0, max: 100, ticks: { color: muted, callback: v => `${v}%` } } } }
+    });
+  }
+
+  const timed = real.filter(r => r.durationSec != null);
+  const durBox = document.getElementById('durationChart').parentElement;
+  if (timed.length < 2 || typeof Chart === 'undefined') {
+    durBox.replaceChildren(el('div', { className: 'empty', text: 'Trends appear after two real runs.' }));
+  } else {
+    new Chart(document.getElementById('durationChart'), {
+      data: {
+        labels: timed.map(labels),
+        datasets: [
+          { type: 'bar', label: 'Minutes', data: timed.map(r => +(r.durationSec / 60).toFixed(1)), backgroundColor: cssVar('--accent') },
+          { type: 'line', label: `Budget ${BUDGET_MIN} min`, data: timed.map(() => BUDGET_MIN), borderColor: cssVar('--fail'), borderDash: [6, 4], borderWidth: 1, pointRadius: 0 }
+        ]
+      },
+      options: { ...base, scales: { ...base.scales, y: { ...base.scales.y, min: 0, suggestedMax: BUDGET_MIN + 2 } } }
+    });
+  }
+}
+
+function renderTable() {
+  const trigger = document.getElementById('fTrigger').value;
+  const kind = document.getElementById('fKind').value;
+  const result = document.getElementById('fResult').value;
+  const shown = runs.filter(r =>
+    (trigger === 'all' || r.trigger === trigger) &&
+    (kind === 'all' || (kind === 'real') === isReal(r)) &&
+    (result === 'all' || r.verdict === result));
+
+  const body = document.getElementById('rows');
+  body.replaceChildren();
+  shown.forEach(r => {
+    const href = `run.html?run=${encodeURIComponent(r.folder)}`;
+    const [day, time] = fmtWhen(r.date);
+    const when = el('td', { className: 'when' }, day, el('small', { text: time }));
+    const scenario = isReal(r) ? el('span', { className: 'tag', text: 'real run' })
+                               : el('span', { className: 'tag demo', text: r.scenario });
+    const link = el('a', { text: 'Report →' });
+    link.href = href;
+    const tr = el('tr', {},
+      when,
+      el('td', { text: triggerLabel(r) }),
+      el('td', {}, scenario),
+      el('td', { className: 'mono', text: r.branch || '—' }),
+      el('td', { className: 'mono', text: r.sha || '—' }),
+      el('td', {}, gateChip(r.gates && r.gates.smoke)),
+      el('td', {}, gateChip(r.gates && r.gates.critical)),
+      el('td', {}, gateChip(r.gates && r.gates.regression)),
+      el('td', {}, resultChip(r)),
+      el('td', { className: 'mono', text: fmtDuration(r.durationSec) }),
+      el('td', {}, link));
+    tr.addEventListener('click', e => { if (e.target.tagName !== 'A') location.href = href; });
+    body.append(tr);
+  });
+  if (!shown.length) {
+    const td = el('td', { className: 'empty', text: 'No runs match these filters.' });
+    td.colSpan = 11;
+    body.append(el('tr', {}, td));
+  }
+  document.getElementById('count').textContent = `${shown.length} of ${runs.length} runs`;
+}
+
+['fTrigger', 'fKind', 'fResult'].forEach(id => document.getElementById(id).addEventListener('change', renderTable));
+
+fetch('runs.json', { cache: 'no-store' })
+  .then(res => res.ok ? res.json() : [])
+  .catch(() => [])
+  .then(data => {
+    runs = Array.isArray(data) ? data.sort((a, b) => b.date.localeCompare(a.date)) : [];
+    renderKpis();
+    renderCharts();
+    renderTable();
+  });
+</script>
+</body>
+</html>
