@@ -1,5 +1,47 @@
 [
   {
+    "id": "41878074561-1",
+    "folder": "2026-11-04_173211_run41878074561-1",
+    "date": "2026-11-04T17:32:11.590754922Z",
+    "trigger": "workflow_dispatch",
+    "scenario": "critical-flake",
+    "branch": "main",
+    "pr": null,
+    "sha": "aa29646",
+    "runUrl": "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/41878074561",
+    "verdict": "FAILED",
+    "reason": "Critical gate breached: pass rate 90%, below 100% threshold (1 passed only on retry — no retry credit on the critical path)",
+    "owner": "PR author (QA reviews)",
+    "classification": "CODE",
+    "durationSec": 111,
+    "quarantineSize": 0,
+    "quarantinedThisRun": 0,
+    "gates": {
+      "smoke": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 5,
+        "passed": 5,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "critical": {
+        "verdict": "FAIL",
+        "attempt": 1,
+        "executed": 10,
+        "passed": 9,
+        "flaky": 1,
+        "passRate": 90.0,
+        "flakeRate": 10.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      }
+    }
+  },
+  {
     "id": "41878065349-1",
     "folder": "2026-11-04_173208_run41878065349-1",
     "date": "2026-11-04T17:32:08.505337316Z",

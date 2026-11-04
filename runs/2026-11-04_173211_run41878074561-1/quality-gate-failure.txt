@@ -1,0 +1,9 @@
+QUALITY GATE BREACHED
+gate: critical
+reason: Critical gate breached: pass rate 90%, below 100% threshold (1 passed only on retry — no retry credit on the critical path)
+classification: CODE
+pass_rate: 90.0 (threshold 100.0)
+owner: PR author (QA reviews)
+runbook: docs/runbooks/critical-failure.md
+next_step: Treat the intermittent failure as a real defect: a critical flow that fails once in production fails a customer.
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$CriticalFlakeFault#bookingTotalIntermittentlyWrong | FLAKY | CODE | Simulated intermittent failure: booking total was 0 on first read
