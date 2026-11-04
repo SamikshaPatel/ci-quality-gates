@@ -1,0 +1,55 @@
+{
+  "tier" : "regression",
+  "verdict" : "FAIL",
+  "attempt" : 1,
+  "executed" : 17,
+  "passed" : 11,
+  "failed" : 0,
+  "flaky" : 6,
+  "skipped" : 0,
+  "effectivePassed" : 17,
+  "passRate" : 100.0,
+  "flakeRate" : 35.3,
+  "passRateThreshold" : 80.0,
+  "maxFlakeRate" : 20.0,
+  "classification" : "NONE",
+  "reason" : "Quality gate breached: flake rate 35.3%, above 20% limit (6 test(s) passed only on retry); quarantine cap reached: 6 tests would be quarantined, cap is 5",
+  "action" : "Quarantine refused, build marked failed, PR blocked.",
+  "owner" : "QA lead",
+  "runbook" : "docs/runbooks/quality-gate-failure.md",
+  "nextStep" : "Quarantine is full. Fix or remove quarantined tests before more can be quarantined — an uncapped quarantine is where failing tests go to hide.",
+  "failures" : [ {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#dateLocaleFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (date-locale): fails first attempt, passes on retry"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#currencyFormattingFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (currency-format): fails first attempt, passes on retry"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#searchResultsOrderFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (search-order): fails first attempt, passes on retry"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#paginationBoundaryFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (pagination): fails first attempt, passes on retry"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#additionalNeedsTrimFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (needs-trim): fails first attempt, passes on retry"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#cacheHeaderFlaky",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated flaky failure (cache-header): fails first attempt, passes on retry"
+  } ],
+  "flakyTests" : [ "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#dateLocaleFlaky", "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#currencyFormattingFlaky", "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#searchResultsOrderFlaky", "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#paginationBoundaryFlaky", "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#additionalNeedsTrimFlaky", "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#cacheHeaderFlaky" ],
+  "newlyQuarantined" : [ ],
+  "firstAttemptReason" : null
+}
