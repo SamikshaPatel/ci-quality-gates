@@ -101,11 +101,12 @@ docs/                   test plan, ADRs, runbooks, evidence
 ## Setup
 
 1. **Branch protection:** Settings → Branches → add a rule for `main`, require a PR, and require the **Smoke → Critical → Non-critical** status check.
-2. **Secrets:** Settings → Secrets and variables → Actions.
+2. **Secrets and variables:** Settings → Secrets and variables → Actions. Only credentials are secrets. The Jira site and project key are plain variables, because GitHub masks every secret value in logs and reports, which would turn ticket links into `***-1`.
 
-   | Secret | Purpose | Required |
-   |---|---|---|
-   | `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY` | Quarantine tickets | No: without them, tickets are skipped and the report says so |
+   | Name | Kind | Purpose | Required |
+   |---|---|---|---|
+   | `JIRA_EMAIL`, `JIRA_API_TOKEN` | Repository secret | Quarantine tickets | No: without them, tickets are skipped and the report says so |
+   | `JIRA_BASE_URL`, `JIRA_PROJECT_KEY` | Repository variable | Jira site and project for tickets | With the two secrets above |
    | `RB_USERNAME`, `RB_PASSWORD` | Restful-Booker auth | No: falls back to the public demo defaults |
    | `SAUCE_USERNAME`, `SAUCE_PASSWORD` | SauceDemo login | No: falls back to the public demo defaults |
 
