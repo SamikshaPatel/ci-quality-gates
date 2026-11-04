@@ -1,0 +1,37 @@
+name: Release evidence pack
+
+# Tagging v* runs the full gates on the tagged commit, then publishes a GitHub release
+# carrying the evidence pack: gate results, run report, quarantine state, commit SHA.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  gates:
+    uses: ./.github/workflows/pr.yml
+    secrets: inherit
+
+  evidence-pack:
+    needs: gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gate-evidence-*
+          path: evidence
+          merge-multiple: true
+      - name: Build and publish the evidence pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "commit: ${GITHUB_SHA}" > evidence/RELEASE-SHA.txt
+          echo "tag: ${GITHUB_REF_NAME}" >> evidence/RELEASE-SHA.txt
+          (cd evidence && zip -qr "../evidence-pack-${GITHUB_REF_NAME}.zip" .)
+          gh release create "${GITHUB_REF_NAME}" "evidence-pack-${GITHUB_REF_NAME}.zip" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file evidence/gate-results/run-report.md

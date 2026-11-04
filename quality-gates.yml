@@ -1,0 +1,60 @@
+# Quality gates — the single source of truth for what "green" means.
+# CI_CONTRACT.md explains each value; ADRs in docs/adr/ explain why.
+# Change a threshold here, in a reviewed PR — never in a workflow file.
+
+smoke:
+  pass_rate: 100          # percent; any failure is a hard stop
+  retries: 0              # smoke never retries — a retry would hide an outage
+  blocking: true
+
+critical:
+  pass_rate: 100          # percent
+  retries: 1              # we retry only to DETECT flakiness...
+  flaky_counts_as_failure: true   # ...a pass-on-retry still fails this gate (ADR-0003)
+  blocking: true
+
+noncritical:
+  pass_rate: 80           # minimum percent of executed tests passing (flaky passes count as passed)
+  max_flake_rate: 20      # maximum percent of executed tests that only passed on retry
+  retries: 1
+  blocking: true
+  # Threshold history — the baseline tightens as real run data comes in (ADR-0002).
+  threshold_history:
+    - { date: 2026-11-04, pass_rate: 80, max_flake_rate: 20, reason: "Initial baseline" }
+
+quarantine:
+  max_tests: 5            # cap: above this, quarantine refuses and the PR is blocked
+  max_age_days: 14        # nightly alerts when a test sits in quarantine longer than this
+  exit_green_streak: 7    # consecutive clean nightly passes to leave quarantine
+  never_quarantine:       # class-name patterns that can never be quarantined, whatever their tier
+    - "*Auth*"
+    - "*Checkout*"
+
+classification:
+  # Regular expressions. A failure whose type or message matches any of them is ENV; everything else is CODE.
+  env_patterns:
+    - "Connection refused"
+    - "ConnectException"
+    - "UnknownHostException"
+    - "SocketTimeoutException"
+    - "Read timed out"
+    - "TimeoutError"
+    - "net::ERR_"
+    - "Gateway Timeout"
+    - "Service Unavailable"
+    - "Bad Gateway"
+    - "status code:? <?50[234]"
+    - "but was <50[234]>"
+    - "health check"
+
+owners:
+  smoke_env: { owner: "DevOps", runbook: "docs/runbooks/smoke-failure.md" }
+  smoke_code: { owner: "PR author", runbook: "docs/runbooks/smoke-failure.md" }
+  critical: { owner: "PR author (QA reviews)", runbook: "docs/runbooks/critical-failure.md" }
+  noncritical_failure: { owner: "PR author", runbook: "docs/runbooks/quality-gate-failure.md" }
+  noncritical_flake: { owner: "QA, with the test's author", runbook: "docs/runbooks/quality-gate-failure.md" }
+  quarantine_cap: { owner: "QA lead", runbook: "docs/runbooks/quality-gate-failure.md" }
+
+runtime_budget_minutes:
+  smoke: 2
+  pr_pipeline: 10

@@ -1,0 +1,74 @@
+name: Nightly quality run
+
+# Full gates on main every night, plus the quarantine review:
+# quarantined tests run too, build a green streak, and leave quarantine after
+# the configured number of clean nights. Overdue quarantines fail this run on purpose.
+on:
+  schedule:
+    - cron: "17 6 * * *"   # 06:17 UTC, about 1 a.m. Toronto time
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RB_USERNAME: ${{ secrets.RB_USERNAME }}
+      RB_PASSWORD: ${{ secrets.RB_PASSWORD }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
+
+      - name: "Gate 1 — Smoke"
+        run: scripts/run-gate.sh smoke
+      - name: "Gate 2 — Critical tier"
+        run: scripts/run-gate.sh critical
+      - name: "Gate 3 — Non-critical tier"
+        run: scripts/run-regression.sh
+
+      - name: Quarantine review (run quarantined tests, update green streaks)
+        if: always() && hashFiles('quarantine.json') != ''
+        run: |
+          if [ "$(jq '.tests | length' quarantine.json)" -eq 0 ]; then
+            echo "Quarantine is empty."; exit 0
+          fi
+          rm -rf api-tests/target/reports/quarantine ui-tests/target/reports/quarantine
+          mvn -B -ntp -pl api-tests,ui-tests test -Dtier=quarantine -Dgroups=regression \
+            -Dinclude.quarantined=true -Dsurefire.rerunFailingTestsCount=1 -Dmaven.test.failure.ignore=true
+          java -jar gate-evaluator/target/gate-evaluator.jar review \
+            --reports api-tests/target/reports/quarantine,ui-tests/target/reports/quarantine
+
+      - name: Commit quarantine updates to main
+        if: always()
+        run: |
+          if git diff --quiet -- quarantine.json; then exit 0; fi
+          git config user.name "quality-gate-bot"
+          git config user.email "quality-gate-bot@users.noreply.github.com"
+          git add quarantine.json
+          git commit -m "chore(quarantine): nightly review ${{ github.run_id }}"
+          git push
+
+      - name: Run report
+        if: always()
+        run: java -jar gate-evaluator/target/gate-evaluator.jar report
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-evidence-${{ github.run_id }}
+          path: |
+            gate-results/
+            quarantine.json
+            */target/reports/
+            */target/allure-results/
+          retention-days: 90

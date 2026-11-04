@@ -1,0 +1,13 @@
+# The API under test, built from its public source and run inside CI.
+# The public Restful-Booker instance resets every 10 minutes and is shared, so the
+# pipeline runs its own copy: an environment the gates control (see README, "Systems under test").
+services:
+  restful-booker:
+    build: https://github.com/mwinteringham/restful-booker.git
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3001/ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="sample" tests="5" failures="1" errors="0" skipped="1" flakes="1">
+  <testcase name="passes()" classname="io.github.samikshapatel.qg.api.BookingRegressionTest" time="0.1"/>
+  <testcase name="flaky()" classname="io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults" time="0.1">
+    <flakyFailure message="Simulated flaky failure (search-order)" type="org.opentest4j.AssertionFailedError">
+      <stackTrace>org.opentest4j.AssertionFailedError: Simulated flaky failure</stackTrace>
+    </flakyFailure>
+  </testcase>
+  <testcase name="broken()" classname="io.github.samikshapatel.qg.api.BookingRegressionTest" time="0.1">
+    <failure message="Expected status code &lt;200&gt; but was &lt;504&gt;." type="java.lang.AssertionError">trace</failure>
+    <rerunFailure message="Expected status code &lt;200&gt; but was &lt;504&gt;." type="java.lang.AssertionError">trace</rerunFailure>
+  </testcase>
+  <testcase name="skippedOne()" classname="io.github.samikshapatel.qg.api.BookingRegressionTest" time="0">
+    <skipped message="Quarantined"/>
+  </testcase>
+  <testcase name="errors()" classname="io.github.samikshapatel.qg.ui.UiSmokeTest" time="0.1">
+    <error message="net::ERR_NAME_NOT_RESOLVED at https://www.saucedemo.com/" type="com.microsoft.playwright.PlaywrightException">trace</error>
+  </testcase>
+</testsuite>

@@ -1,0 +1,119 @@
+name: Quality gates
+
+# Runs on every pull request, from the "Run workflow" button (pick a demo scenario),
+# and as a reusable workflow for releases. CI_CONTRACT.md defines what green means.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Demo scenario: which failure path to prove (none = normal run)"
+        type: choice
+        default: none
+        options:
+          - none
+          - env-down
+          - smoke-code
+          - critical-flake
+          - flake-breach
+          - quarantine-cap
+  workflow_call:
+    inputs:
+      scenario:
+        type: string
+        default: none
+
+permissions:
+  contents: write        # commit quarantine.json changes to the PR branch
+  pull-requests: write   # post the run report as a PR comment
+
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Smoke → Critical → Non-critical
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEMO_SCENARIO: ${{ inputs.scenario || 'none' }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      # Credentials live in GitHub secrets, never in the repo. Tests fall back to the
+      # public demo defaults when a secret is not set.
+      RB_USERNAME: ${{ secrets.RB_USERNAME }}
+      RB_PASSWORD: ${{ secrets.RB_PASSWORD }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_PASSWORD: ${{ secrets.SAUCE_PASSWORD }}
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # On a PR, check out the branch itself so a quarantine commit can be pushed back to it.
+          ref: ${{ github.head_ref || github.ref }}
+
+      - uses: ./.github/actions/setup-env
+
+      - name: "Demo scenario env-down: stop the API mid-pipeline"
+        if: env.DEMO_SCENARIO == 'env-down'
+        run: docker compose -f docker-compose.ci.yml stop restful-booker
+
+      - name: "Gate 1 — Smoke (100%, no retries)"
+        id: smoke
+        run: scripts/run-gate.sh smoke
+
+      - name: "Gate 2 — Critical tier (100%, no retry credit)"
+        id: critical
+        run: scripts/run-gate.sh critical
+
+      - name: "Gate 3 — Non-critical tier (pass rate and flake rate, quarantine)"
+        id: regression
+        run: scripts/run-regression.sh
+
+      - name: Commit quarantine changes to the PR branch
+        if: >-
+          always() && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && hashFiles('gate-results/quarantine-changed') != ''
+        run: |
+          git config user.name "quality-gate-bot"
+          git config user.email "quality-gate-bot@users.noreply.github.com"
+          git add quarantine.json
+          git commit -m "chore(quarantine): quarantine flaky tests from run ${{ github.run_id }}"
+          git push
+
+      - name: Run report
+        if: always()
+        run: java -jar gate-evaluator/target/gate-evaluator.jar report
+
+      - name: Post run report on the PR
+        if: always() && github.event_name == 'pull_request' && hashFiles('gate-results/run-report.md') != ''
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: run-report
+          path: gate-results/run-report.md
+
+      - name: Collect evidence
+        if: always()
+        run: |
+          mkdir -p evidence
+          cp -r gate-results evidence/ 2>/dev/null || true
+          cp quarantine.json evidence/ 2>/dev/null || true
+          for m in api-tests ui-tests; do
+            mkdir -p "evidence/$m"
+            cp -r "$m/target/reports" "evidence/$m/" 2>/dev/null || true
+            cp -r "$m/target/allure-results" "evidence/$m/" 2>/dev/null || true
+            cp -r "$m/target/traces" "evidence/$m/" 2>/dev/null || true
+          done
+          docker compose -f docker-compose.ci.yml logs --no-color > evidence/restful-booker.log 2>&1 || true
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-evidence-${{ env.DEMO_SCENARIO }}-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90

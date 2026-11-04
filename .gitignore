@@ -1,0 +1,7 @@
+target/
+gate-results/
+evidence/
+*.iml
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,35 @@
+name: Set up test environment
+description: Java, the API under test, the build with evaluator unit tests, and Playwright's browser.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: "21"
+        cache: maven
+
+    - name: Start the API under test (Restful-Booker in Docker)
+      shell: bash
+      run: docker compose -f docker-compose.ci.yml up -d --build --wait
+
+    - name: Build and unit-test the gate evaluator
+      shell: bash
+      run: |
+        mvn -B -ntp install -pl test-support,gate-evaluator -am
+        mvn -B -ntp test-compile -pl api-tests,ui-tests
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+
+    - name: Install Chromium for Playwright
+      shell: bash
+      run: mvn -B -ntp -q -pl ui-tests exec:java@install-browsers
+
+    - name: Prepare results folder
+      shell: bash
+      run: mkdir -p gate-results && chmod +x scripts/*.sh
