@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -192,6 +193,55 @@ class MainTest {
         assertTrue(java.util.regex.Pattern.compile(envRegex).matcher("java.net.ConnectException: Connection refused").matches());
         assertFalse(java.util.regex.Pattern.compile(envRegex).matcher("expected: <200> but was: <201>").matches());
         assertTrue(categories.get(3).get("flaky").asBoolean());
+    }
+
+    @Test
+    void reportShowsFailureHistoryAndWritesTestsJson() throws IOException {
+        Path r = reports("smoke", pass("ApiSmokeTest", "ping"), flaky("ApiSmokeTest", "auth"));
+        Main.evaluate(opts("smoke", r), Map.of());
+        Flakiness.Report baseline = new Flakiness.Report();
+        baseline.minRuns = 5;
+        baseline.eligibleRuns = 12;
+        Flakiness.Score s = new Flakiness.Score();
+        s.id = API + "ApiSmokeTest#auth";
+        s.runs = 12;
+        s.flaky = 3;
+        s.score = 25;
+        baseline.tests.add(s);
+        MAPPER.writeValue(tmp.resolve("out/flakiness-baseline.json").toFile(), baseline);
+
+        Main.report(opts("smoke", tmp), Map.of());
+        String report = Files.readString(tmp.resolve("out/run-report.md"));
+        assertTrue(report.contains("### Failure history on main"), report);
+        assertTrue(report.contains("`ApiSmokeTest.auth` | FLAKY | failed or flaky in 3 of 12 main runs (25%)"), report);
+        assertEquals(2, MAPPER.readTree(tmp.resolve("out/tests.json").toFile()).size());
+    }
+
+    @Test
+    void flakinessAndScoreQuarantineCommands() throws IOException {
+        Path runs = Files.createDirectories(tmp.resolve("runs/r1"));
+        RunHistory.Entry e = new RunHistory.Entry();
+        e.folder = "r1";
+        e.date = "2026-11-05T06:00:00Z";
+        e.branch = "main";
+        e.scenario = "none";
+        e.verdict = "PASSED";
+        MAPPER.writeValue(runs.resolve("history-entry.json").toFile(), e);
+        MAPPER.writeValue(runs.resolve("tests.json").toFile(),
+                List.of(new Flakiness.Outcome(API + "BookingRegressionTest#x", "regression", "FLAKY")));
+        Path flakinessFile = tmp.resolve("site/flakiness.json");
+        assertEquals(Main.PASS, Main.flakiness(Map.of("runs", tmp.resolve("runs").toString(),
+                "out", flakinessFile.toString(), "config", "../quality-gates.yml")));
+        assertEquals(1, MAPPER.readValue(flakinessFile.toFile(), Flakiness.Report.class).eligibleRuns);
+
+        Map<String, String> o = new HashMap<>(opts("regression", tmp));
+        o.put("flakiness", flakinessFile.toString());
+        assertEquals(Main.PASS, Main.quarantineByScore(o, Map.of()));
+        assertEquals(0, QuarantineStore.load(tmp.resolve("quarantine.json")).size(), "one run is below min_runs");
+        assertTrue(Files.exists(tmp.resolve("out/score-quarantine.json")));
+
+        o.put("flakiness", tmp.resolve("missing.json").toString());
+        assertEquals(Main.PASS, Main.quarantineByScore(o, Map.of()));
     }
 
     @Test

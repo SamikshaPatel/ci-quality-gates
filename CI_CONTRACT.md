@@ -62,6 +62,7 @@ The gate evaluator tags each failure **ENV** (timeout, 5xx, unreachable host) or
 | Ticket | One Jira ticket per quarantined test, opened automatically |
 | Exit | 7 consecutive clean nightly runs |
 | Age limit | 14 days. The nightly run fails and names overdue tests |
+| By score | Nightly also quarantines a non-critical test whose flakiness score reaches 10% over at least 5 main-branch runs ([ADR-0013](docs/adr/0013-flakiness-score.md)) |
 | Visibility | On a PR, the bot commits the quarantine change to the branch, so it shows in the PR diff, and posts a quarantine notice comment. Nightly changes (releases from quarantine) arrive as a review PR, never a direct push to `main` |
 
 ## What every failure must say

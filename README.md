@@ -43,6 +43,7 @@ Beside these, the **Security** workflow runs CodeQL and dependency review on eve
 | Every failure has a runbook | [docs/runbooks/](docs/runbooks) |
 | Releases are promoted, not rebuilt, with an approval | Actions → **Promote**, and the repo's **Deployments** |
 | Every test of every run, with requests, screenshots and trends | **Allure** link on each row of the run history ([ADR-0012](docs/adr/0012-allure-report.md)) |
+| Flakiness is measured across runs, not guessed from one retry | [Flakiness scores](https://samikshapatel.github.io/ci-quality-gates/flaky.html) ([ADR-0013](docs/adr/0013-flakiness-score.md)) |
 | Every run, newest first, with trends | [Run history site](https://samikshapatel.github.io/ci-quality-gates/) |
 | Frozen results of each scenario | [docs/evidence/](docs/evidence) |
 | The contract is not tied to one CI tool | [Jenkinsfile](Jenkinsfile) calls the same scripts |
