@@ -11,7 +11,7 @@ Real failures pushed the tier below its pass-rate threshold. Hard failures are n
 ## Flake rate over the limit — owner: QA, with each test's author
 This case is handled automatically, and no one needs to act to unblock the PR:
 
-1. The flaky tests are added to `quarantine.json`. On a PR, the bot commits that change to the branch.
+1. The flaky tests are added to `quarantine.json`. On a PR, the bot commits that change to the branch and posts a quarantine notice comment; the gates then rerun on that commit.
 2. A Jira ticket is opened for each test, and the ticket links back to the run.
 3. The tier reruns without them. If the rerun passes, the PR can merge.
 

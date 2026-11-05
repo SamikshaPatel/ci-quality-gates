@@ -2,6 +2,9 @@ name: Quality gates
 
 # Runs on every pull request, from the "Run workflow" button (pick a demo scenario),
 # and as a reusable workflow for releases. CI_CONTRACT.md defines what green means.
+#
+# Demo scenarios on a pull request: put [demo:<scenario>] in the PR title, e.g.
+# "[demo:flake-breach] Show quarantine on a PR". Demo PRs are evidence, never merged.
 on:
   pull_request:
   workflow_dispatch:
@@ -24,12 +27,14 @@ on:
         default: none
 
 permissions:
-  contents: write        # commit quarantine.json changes to the PR branch
+  contents: write        # commit quarantine.json changes to the PR branch; publish run history
   pull-requests: write   # post the run report as a PR comment
 
+# Runs for the same PR queue instead of cancelling each other, so every run finishes,
+# posts its report and lands in the run history. A quarantine commit's run waits its turn.
 concurrency:
   group: gates-${{ github.ref }}-${{ inputs.scenario || 'none' }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   gates:
@@ -37,7 +42,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      DEMO_SCENARIO: ${{ inputs.scenario || 'none' }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       # Credentials live in GitHub secrets, never in the repo. Tests fall back to the
       # public demo defaults when a secret is not set.
@@ -54,6 +58,26 @@ jobs:
         with:
           # On a PR, check out the branch itself so a quarantine commit can be pushed back to it.
           ref: ${{ github.head_ref || github.ref }}
+          # The bot token (not GITHUB_TOKEN) is used for that push, because only a push made with
+          # a real account's token starts a new pipeline run on the new commit. Without it the
+          # PR's newest commit would have no green check and could never merge.
+          token: ${{ secrets.QUALITY_BOT_TOKEN || github.token }}
+
+      - name: Pick the demo scenario
+        env:
+          INPUT_SCENARIO: ${{ inputs.scenario }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          scenario="${INPUT_SCENARIO:-none}"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            scenario="$(grep -oE '\[demo:[a-z-]+\]' <<< "${PR_TITLE}" | head -1 | sed -E 's/\[demo:([a-z-]+)\]/\1/' || true)"
+          fi
+          case "${scenario}" in
+            env-down|smoke-code|critical-flake|flake-breach|quarantine-cap) ;;
+            *) scenario="none" ;;
+          esac
+          echo "DEMO_SCENARIO=${scenario}" >> "$GITHUB_ENV"
+          echo "Demo scenario: ${scenario}"
 
       - uses: ./.github/actions/setup-env
 
@@ -73,18 +97,6 @@ jobs:
         id: regression
         run: scripts/run-regression.sh
 
-      - name: Commit quarantine changes to the PR branch
-        if: >-
-          always() && github.event_name == 'pull_request'
-          && github.event.pull_request.head.repo.full_name == github.repository
-          && hashFiles('gate-results/quarantine-changed') != ''
-        run: |
-          git config user.name "quality-gate-bot"
-          git config user.email "quality-gate-bot@users.noreply.github.com"
-          git add quarantine.json
-          git commit -m "chore(quarantine): quarantine flaky tests from run ${{ github.run_id }}"
-          git push
-
       - name: Run report
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report
@@ -103,6 +115,28 @@ jobs:
         with:
           header: run-report
           path: gate-results/run-report.md
+
+      - name: Write the quarantine notice
+        if: always() && github.event_name == 'pull_request' && hashFiles('gate-results/quarantine-changed') != ''
+        run: |
+          {
+            echo "## Quarantine notice"
+            echo
+            echo "Run [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) quarantined flaky tests on this PR."
+            echo "The bot commits the updated \`quarantine.json\` to this branch, so the change shows in the PR diff, and the gates rerun on that commit."
+            echo
+            awk '/^### Quarantine$/{f=1; next} f && /^### /{exit} f && /^\*\*Evidence/{exit} f{print}' gate-results/run-report.md
+          } > gate-results/quarantine-notice.md
+          cat gate-results/quarantine-notice.md
+
+      - name: Post the quarantine notice on the PR
+        # A separate comment per quarantine event: the sticky run report shows the PR's current
+        # status, while this keeps a permanent record of what was quarantined and why.
+        if: always() && hashFiles('gate-results/quarantine-notice.md') != ''
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: quarantine-${{ github.run_id }}
+          path: gate-results/quarantine-notice.md
 
       - name: Collect evidence
         if: always()
@@ -125,3 +159,21 @@ jobs:
           name: gate-evidence-${{ env.DEMO_SCENARIO }}-${{ github.run_id }}
           path: evidence/
           retention-days: 90
+
+      - name: Commit quarantine changes to the PR branch
+        # Last step on purpose: the report, history and evidence are recorded first.
+        if: >-
+          always() && github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && hashFiles('gate-results/quarantine-changed') != ''
+        env:
+          HAS_BOT_TOKEN: ${{ secrets.QUALITY_BOT_TOKEN != '' }}
+        run: |
+          if [[ "${HAS_BOT_TOKEN}" != "true" ]]; then
+            echo "::warning::QUALITY_BOT_TOKEN is not set. The quarantine commit will not start a new run, so this PR cannot merge until someone pushes again."
+          fi
+          git config user.name "quality-gate-bot"
+          git config user.email "quality-gate-bot@users.noreply.github.com"
+          git add quarantine.json
+          git commit -m "chore(quarantine): quarantine flaky tests from run ${GITHUB_RUN_ID}"
+          git push

@@ -47,19 +47,35 @@ jobs:
           java -jar gate-evaluator/target/gate-evaluator.jar review \
             --reports api-tests/target/reports/quarantine,ui-tests/target/reports/quarantine
 
-      - name: Commit quarantine updates to main
-        if: always()
-        run: |
-          if git diff --quiet -- quarantine.json; then exit 0; fi
-          git config user.name "quality-gate-bot"
-          git config user.email "quality-gate-bot@users.noreply.github.com"
-          git add quarantine.json
-          git commit -m "chore(quarantine): nightly review ${{ github.run_id }}"
-          git push
-
       - name: Run report
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report
+
+      - name: Open a quarantine review PR
+        # main is protected, so even the bot goes through a PR: the quarantine change gets
+        # the same gates and a human merge. Uses the bot token so the PR's gates actually run.
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.QUALITY_BOT_TOKEN }}
+        run: |
+          if git diff --quiet -- quarantine.json; then
+            echo "No quarantine changes tonight."; exit 0
+          fi
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::warning::QUALITY_BOT_TOKEN is not set, so the quarantine review PR cannot be opened."
+            git diff -- quarantine.json
+            exit 0
+          fi
+          branch="bot/quarantine-review-${GITHUB_RUN_ID}"
+          git config user.name "quality-gate-bot"
+          git config user.email "quality-gate-bot@users.noreply.github.com"
+          git checkout -b "${branch}"
+          git add quarantine.json
+          git commit -m "chore(quarantine): nightly review $(date -u +%F)"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "${branch}"
+          gh pr create --repo "${GITHUB_REPOSITORY}" --base main --head "${branch}" \
+            --title "chore(quarantine): nightly review $(date -u +%F)" \
+            --body-file gate-results/run-report.md
 
       - name: Publish to the run-history site
         if: always() && hashFiles('gate-results/history-entry.json') != ''
