@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flakiness Scores</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--warn); vertical-align: middle; margin-right: 8px; }
+    .bar.high { background: var(--fail); }
+    .bar.zero { background: var(--line); width: 4px; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tbody tr { cursor: default; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← All runs</a>
+  <header>
+    <h1>Flakiness scores</h1>
+    <p id="lead">How often each test failed or needed a retry on main, where the code already passed review. Pull requests, demo scenarios and environment outages never count.</p>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Flakiness summary"></section>
+
+  <div class="filters">
+    <label>Tier
+      <select id="fTier">
+        <option value="all">All</option>
+        <option value="smoke">Smoke</option>
+        <option value="contract">Contract</option>
+        <option value="critical">Critical</option>
+        <option value="regression">Non-critical</option>
+      </select>
+    </label>
+    <label>Show
+      <select id="fShow">
+        <option value="bad">Tests that failed or retried</option>
+        <option value="all">All tests</option>
+      </select>
+    </label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Test</th><th>Tier</th><th>Score</th><th class="num">Runs</th><th class="num">Failed</th><th class="num">Retried</th><th>Last failure</th><th>Status</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let data = null;
+const el = (tag, opts = {}, ...children) => {
+  const node = document.createElement(tag);
+  if (opts.className) node.className = opts.className;
+  if (opts.text !== undefined) node.textContent = opts.text;
+  if (opts.title) node.title = opts.title;
+  children.forEach(c => node.append(c));
+  return node;
+};
+const shortId = id => {
+  const [cls, method] = id.split('#');
+  return `${cls.split('.').pop().replace('$', '.')}.${method || ''}`;
+};
+const tierName = t => ({ regression: 'Non-critical' })[t] || (t ? t[0].toUpperCase() + t.slice(1) : '—');
+
+function status(s) {
+  if (s.runs < data.minRuns) return el('span', { className: 'chip skip', text: `needs ${data.minRuns} runs` });
+  if (s.score >= data.quarantineScore) {
+    return s.tier === 'regression'
+      ? el('span', { className: 'chip fail', text: 'quarantine candidate' })
+      : el('span', { className: 'chip fail', text: 'fix now (never quarantined)' });
+  }
+  if (s.score > 0) return el('span', { className: 'chip warn', text: 'watch' });
+  return el('span', { className: 'chip pass', text: 'stable' });
+}
+
+function render() {
+  const tier = document.getElementById('fTier').value;
+  const show = document.getElementById('fShow').value;
+  const rows = data.tests.filter(s => (tier === 'all' || s.tier === tier) && (show === 'all' || s.failed + s.flaky > 0));
+  const body = document.getElementById('rows');
+  body.replaceChildren();
+  rows.forEach(s => {
+    const width = Math.max(4, Math.min(120, s.score * 1.2));
+    const bar = el('span', { className: 'bar' + (s.score === 0 ? ' zero' : s.score >= data.quarantineScore ? ' high' : '') });
+    bar.style.width = `${width}px`;
+    body.append(el('tr', {},
+      el('td', { className: 'mono', text: shortId(s.id), title: s.id }),
+      el('td', { text: tierName(s.tier) }),
+      el('td', {}, bar, `${s.score}%`),
+      el('td', { className: 'num', text: s.runs }),
+      el('td', { className: 'num', text: s.failed }),
+      el('td', { className: 'num', text: s.flaky }),
+      el('td', { text: s.lastBad ? new Date(s.lastBad).toLocaleDateString() : '—' }),
+      el('td', {}, status(s))));
+  });
+  if (!rows.length) {
+    const td = el('td', { className: 'empty', text: show === 'bad' ? 'No test has failed or retried on main in this window.' : 'No tests yet.' });
+    td.colSpan = 8;
+    body.append(el('tr', {}, td));
+  }
+  document.getElementById('count').textContent = `${rows.length} of ${data.tests.length} tests`;
+}
+
+function kpis() {
+  const box = document.getElementById('kpis');
+  const kpi = (label, value, note) => el('div', { className: 'kpi' },
+    el('div', { className: 'label', text: label }), el('div', { className: 'value', text: value }), el('div', { className: 'note', text: note }));
+  const scored = data.tests.filter(s => s.runs >= data.minRuns);
+  const candidates = scored.filter(s => s.score >= data.quarantineScore);
+  const stable = scored.filter(s => s.score === 0);
+  box.replaceChildren(
+    kpi('Main runs counted', data.eligibleRuns, `Newest ${data.window} at most`),
+    kpi('Over the limit', candidates.length, `Score ≥ ${data.quarantineScore}% after ${data.minRuns}+ runs`),
+    kpi('Fully stable', scored.length ? `${Math.round(100 * stable.length / scored.length)}%` : '—', `${stable.length} of ${scored.length} scored tests`),
+    kpi('Updated', data.generatedAt ? new Date(data.generatedAt).toLocaleString() : '—', 'Recomputed after every run'));
+}
+
+['fTier', 'fShow'].forEach(id => document.getElementById(id).addEventListener('change', render));
+fetch('flakiness.json', { cache: 'no-store' })
+  .then(r => r.ok ? r.json() : null).catch(() => null)
+  .then(json => {
+    data = json || { tests: [], eligibleRuns: 0, window: 30, minRuns: 5, quarantineScore: 10 };
+    kpis();
+    render();
+  });
+</script>
+</body>
+</html>

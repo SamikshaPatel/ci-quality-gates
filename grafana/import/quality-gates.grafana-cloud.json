@@ -1,0 +1,1106 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_INFINITY",
+      "label": "Infinity",
+      "type": "datasource",
+      "pluginId": "yesoreyeram-infinity-datasource",
+      "pluginName": "Infinity"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "yesoreyeram-infinity-datasource",
+      "name": "Infinity",
+      "version": "3.0.0"
+    }
+  ],
+  "uid": "ci-quality-gates",
+  "title": "CI quality gates",
+  "tags": [
+    "ci",
+    "quality-gates",
+    "qa"
+  ],
+  "description": "Gate results, flakiness, performance and pipeline time from the ci-quality-gates run history.",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "1h",
+  "timezone": "browser",
+  "graphTooltip": 1,
+  "links": [
+    {
+      "title": "Run history site",
+      "url": "https://samikshapatel.github.io/ci-quality-gates/",
+      "type": "link",
+      "targetBlank": true
+    },
+    {
+      "title": "CI contract",
+      "url": "https://github.com/SamikshaPatel/ci-quality-gates/blob/main/CI_CONTRACT.md",
+      "type": "link",
+      "targetBlank": true
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Latest run",
+      "description": "Verdict of the most recent real run (demo scenarios excluded).",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 1 }); { 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger } )",
+          "columns": [
+            {
+              "selector": "verdict",
+              "text": "verdict",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "PASSED": {
+                  "color": "green",
+                  "text": "PASSED"
+                },
+                "FAILED": {
+                  "color": "red",
+                  "text": "FAILED"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^verdict$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Green rate, last 20 runs",
+      "description": "Share of the last 20 real runs that passed every gate.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 20 }); { 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) } )",
+          "columns": [
+            {
+              "selector": "green",
+              "text": "green",
+              "type": "number"
+            },
+            {
+              "selector": "runs",
+              "text": "runs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^green$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Quarantined tests",
+      "description": "Tests in quarantine after the latest real run. The cap is 5.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 1 }); { 'size': $r.quarantineSize } )",
+          "columns": [
+            {
+              "selector": "size",
+              "text": "size",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 5,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 3
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^size$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Tests at or over the flakiness limit",
+      "description": "Tests whose flakiness score over recent main-branch runs is at or above the quarantine score (10%).",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/flakiness.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $d := $; { 'runs': $d.eligibleRuns, 'over': $count($d.tests[score >= $d.quarantineScore]) } )",
+          "columns": [
+            {
+              "selector": "over",
+              "text": "over",
+              "type": "number"
+            },
+            {
+              "selector": "runs",
+              "text": "runs",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^over$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Non-critical tier: pass and flake rate vs limits",
+      "description": "Pass rate must stay at or above its threshold; flake rate at or below its limit. Dashed lines are the limits from quality-gates.yml.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[gates.regression.executed > 0].{ 'date': $substring(date, 0, 19) & 'Z', 'pass': gates.regression.passRate, 'flake': gates.regression.flakeRate, 'passMin': gates.regression.passRateThreshold, 'flakeMax': gates.regression.maxFlakeRate }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
+          "columns": [
+            {
+              "selector": "date",
+              "text": "date",
+              "type": "timestamp"
+            },
+            {
+              "selector": "pass",
+              "text": "Pass rate",
+              "type": "number"
+            },
+            {
+              "selector": "flake",
+              "text": "Flake rate",
+              "type": "number"
+            },
+            {
+              "selector": "passMin",
+              "text": "Pass threshold",
+              "type": "number"
+            },
+            {
+              "selector": "flakeMax",
+              "text": "Flake limit",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "axisSoftMin": 0
+          },
+          "unit": "percent",
+          "max": 100
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pass rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Flake rate"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pass threshold"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Flake limit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Performance: p95 response time vs limit",
+      "description": "k6 load test, nightly and on Staging. The gate fails when p95 crosses the dashed limit.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[$exists(performance.p95Ms)].{ 'date': $substring(date, 0, 19) & 'Z', 'p95': performance.p95Ms, 'p99': performance.p99Ms, 'limit': performance.p95LimitMs }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
+          "columns": [
+            {
+              "selector": "date",
+              "text": "date",
+              "type": "timestamp"
+            },
+            {
+              "selector": "p95",
+              "text": "p95",
+              "type": "number"
+            },
+            {
+              "selector": "p99",
+              "text": "p99",
+              "type": "number"
+            },
+            {
+              "selector": "limit",
+              "text": "p95 limit",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "axisSoftMin": 0
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p99"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95 limit"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "PR pipeline duration vs 10-minute budget",
+      "description": "Wall-clock time of each PR run. Runs above the dashed line break the runtime budget in the CI contract.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[trigger = 'pull_request'].{ 'date': $substring(date, 0, 19) & 'Z', 'minutes': $round(durationSec / 60, 1), 'budget': 10 }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
+          "columns": [
+            {
+              "selector": "date",
+              "text": "date",
+              "type": "timestamp"
+            },
+            {
+              "selector": "minutes",
+              "text": "Minutes",
+              "type": "number"
+            },
+            {
+              "selector": "budget",
+              "text": "Budget",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 2,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "fillOpacity": 60
+          },
+          "unit": "m"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Minutes"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Budget"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Flakiest tests (main branch)",
+      "description": "Each test's failures and retry-passes over the recent main-branch window. Score = (failed + flaky) / runs.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/flakiness.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $d := $; $t := $d.tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
+          "columns": [
+            {
+              "selector": "id",
+              "text": "Test",
+              "type": "string"
+            },
+            {
+              "selector": "tier",
+              "text": "Tier",
+              "type": "string"
+            },
+            {
+              "selector": "runs",
+              "text": "Runs",
+              "type": "number"
+            },
+            {
+              "selector": "failed",
+              "text": "Failed",
+              "type": "number"
+            },
+            {
+              "selector": "flaky",
+              "text": "Flaky",
+              "type": "number"
+            },
+            {
+              "selector": "score",
+              "text": "Score",
+              "type": "number"
+            },
+            {
+              "selector": "lastBad",
+              "text": "Last bad run",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Score"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 5
+                    },
+                    {
+                      "color": "red",
+                      "value": 10
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Recent runs",
+      "description": "The last 15 real runs. Open a run for its report, Allure results and evidence.",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${DS_INFINITY}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "${DS_INFINITY}"
+          },
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
+          "url_options": {
+            "method": "GET",
+            "data": ""
+          },
+          "root_selector": "( $x := ( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 15 }); $r.{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl } ); $exists($x) ? $x : [] )",
+          "columns": [
+            {
+              "selector": "date",
+              "text": "When",
+              "type": "timestamp"
+            },
+            {
+              "selector": "trigger",
+              "text": "Trigger",
+              "type": "string"
+            },
+            {
+              "selector": "branch",
+              "text": "Branch",
+              "type": "string"
+            },
+            {
+              "selector": "scope",
+              "text": "Scope",
+              "type": "string"
+            },
+            {
+              "selector": "verdict",
+              "text": "Verdict",
+              "type": "string"
+            },
+            {
+              "selector": "reason",
+              "text": "Reason",
+              "type": "string"
+            },
+            {
+              "selector": "minutes",
+              "text": "Minutes",
+              "type": "number"
+            },
+            {
+              "selector": "run",
+              "text": "Run",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Verdict"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASSED": {
+                        "color": "green"
+                      },
+                      "FAILED": {
+                        "color": "red"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Run"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open run",
+                    "url": "${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": ".*",
+                      "result": {
+                        "text": "Open"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

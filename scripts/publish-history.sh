@@ -3,6 +3,7 @@
 #   runs/<yyyy-mm-dd_HHMMSS>_run<id>/   run-report.md, gate results, failure file, allure/ report
 #   allure-history/                     Allure trend data, carried into the next run's report
 #   runs.json                           every run's summary, newest first (rebuilt each publish)
+#   flakiness.json                      each test's flakiness score over recent main runs
 #   index.html, run.html                the site itself, copied from site/ on main
 #
 # Concurrent runs can race to push. Each attempt starts from the latest gh-pages,
@@ -53,6 +54,10 @@ for attempt in 1 2 3 4 5; do
 
   # Newest first. Every run carries its own entry, so the index can always be rebuilt from the folders.
   jq -s 'sort_by(.date) | reverse' "$work"/runs/*/history-entry.json > "$work/runs.json"
+
+  # Flakiness scores over recent main-branch runs (ADR-0013), recomputed from every run's tests.json.
+  java -jar gate-evaluator/target/gate-evaluator.jar flakiness --runs "$work/runs" --out "$work/flakiness.json" \
+    || echo "::warning::Flakiness scores could not be computed."
 
   git -C "$work" add -A
   git -C "$work" -c user.name="quality-gate-bot" -c user.email="quality-gate-bot@users.noreply.github.com" \
