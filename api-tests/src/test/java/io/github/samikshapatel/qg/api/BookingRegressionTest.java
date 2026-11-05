@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
-/** Non-critical regression: edge cases and secondary features. Eligible for quarantine. */
+/** Non-critical regression: edge cases and secondary features of the booking API. Eligible for quarantine. */
 @Tag(Tier.REGRESSION)
 class BookingRegressionTest extends BaseApiTest {
 
