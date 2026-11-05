@@ -43,6 +43,8 @@ public final class RunHistory {
         public String classification;
         /** Impact-analysis scope: full, api, ui or docs. */
         public String scope;
+        /** Promotion stage (qa, staging) when the run verified a deployment. */
+        public String stage;
         public Long durationSec;
         public int quarantineSize;
         public int quarantinedThisRun;
@@ -62,6 +64,8 @@ public final class RunHistory {
         e.trigger = env.getOrDefault("GITHUB_EVENT_NAME", env.containsKey("JENKINS_URL") ? "jenkins" : "local");
         String scenario = env.getOrDefault("DEMO_SCENARIO", "none");
         e.scenario = scenario.isBlank() ? "none" : scenario;
+        String stage = env.getOrDefault("DEPLOY_STAGE", "");
+        e.stage = stage.isBlank() ? null : stage;
         String headRef = env.getOrDefault("GITHUB_HEAD_REF", "");
         e.branch = headRef.isBlank() ? env.getOrDefault("GITHUB_REF_NAME", "") : headRef;
         String pr = env.getOrDefault("PR_NUMBER", "");

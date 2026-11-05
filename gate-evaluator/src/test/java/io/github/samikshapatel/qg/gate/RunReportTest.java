@@ -89,10 +89,21 @@ class RunReportTest {
         assertTrue(e.folder.endsWith("_run42-1"), e.folder);
         assertEquals(250L, e.durationSec);
         assertEquals("env-down", e.scenario);
+        assertEquals(null, e.stage);
         assertEquals("DevOps", e.owner);
         assertEquals(2, e.quarantineSize);
         assertEquals(80.0, e.gates.get("smoke").passRate);
         assertFalse(e.gates.containsKey("critical"));
+    }
+
+    @Test
+    void promotionStageShowsInReportAndHistory() {
+        Map<String, GateResult> results = new LinkedHashMap<>();
+        results.put("smoke", smokeEnvFailure());
+        Map<String, String> stageEnv = new java.util.HashMap<>(env);
+        stageEnv.put("DEPLOY_STAGE", "staging");
+        assertTrue(new RunReport(stageEnv).render(results, Optional.empty()).contains("promotion stage: `staging`"));
+        assertEquals("staging", RunHistory.entry(results, 0, stageEnv, java.time.Instant.now()).stage);
     }
 
     @Test

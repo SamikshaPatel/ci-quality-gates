@@ -41,6 +41,7 @@ Beside these, the **Security** workflow runs CodeQL and dependency review on eve
 | Each failure path can be shown on demand | Actions → **Quality gates** → **Run workflow** → pick a scenario |
 | Decisions are reasoned | [docs/adr/](docs/adr) |
 | Every failure has a runbook | [docs/runbooks/](docs/runbooks) |
+| Releases are promoted, not rebuilt, with an approval | Actions → **Promote**, and the repo's **Deployments** |
 | Every run, newest first, with trends | [Run history site](https://samikshapatel.github.io/ci-quality-gates/) |
 | Frozen results of each scenario | [docs/evidence/](docs/evidence) |
 | The contract is not tied to one CI tool | [Jenkinsfile](Jenkinsfile) calls the same scripts |
@@ -102,6 +103,7 @@ docs/                   test plan, ADRs, runbooks, evidence
 - **Quality gates** (`pr.yml`) runs on every PR and from the Run workflow button. Smoke runs first, then the critical tier, then the non-critical tier. It posts the run report on the PR and uploads evidence.
 - **Nightly** (`nightly.yml`) runs the full gates on `main`, then reviews quarantine: quarantined tests run and build a green streak. A test is released after 7 clean nights, and one older than 14 days fails the run. Changes to `quarantine.json` arrive as a review PR, because `main` is protected even from the bot.
 - **Run history** (GitHub Pages, `gh-pages` branch): every run publishes its report to `runs/<date-time>_run<id>/`. The site lists all runs newest first, with filters for trigger, real or demo run, and result, plus trend charts of non-critical pass and flake rates and pipeline duration against the 10-minute budget. Demo runs are excluded from the trends. This plays the role a results server such as ReportPortal or Allure TestOps plays in larger teams.
+- **Promote** (`promote.yml`) runs on every merge to `main`: build once, then QA → Staging → Production, each verifying the artifact's SHA-256. QA and Staging run the full gates; Staging opens a Jira change record; Production waits for a required reviewer, then runs a post-deployment smoke check ([ADR-0011](docs/adr/0011-promotion-with-approvals.md)).
 - **Release** (`release.yml`) runs on a `v*` tag. It runs the gates on the tagged commit and publishes a GitHub release with an evidence pack attached.
 
 ## Setup

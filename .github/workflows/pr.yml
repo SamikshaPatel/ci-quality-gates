@@ -25,6 +25,10 @@ on:
       scenario:
         type: string
         default: none
+      stage:
+        description: "Promotion stage being verified (qa, staging), shown in the report and history"
+        type: string
+        default: ""
 
 permissions:
   contents: write        # commit quarantine.json changes to the PR branch; publish run history
@@ -43,6 +47,7 @@ jobs:
     timeout-minutes: 15
     env:
       PR_NUMBER: ${{ github.event.pull_request.number }}
+      DEPLOY_STAGE: ${{ inputs.stage }}
       # Credentials live in GitHub secrets, never in the repo. Tests fall back to the
       # public demo defaults when a secret is not set.
       RB_USERNAME: ${{ secrets.RB_USERNAME }}
@@ -57,7 +62,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # On a PR, check out the branch itself so a quarantine commit can be pushed back to it.
-          ref: ${{ github.head_ref || github.ref }}
+          # Elsewhere, the exact commit that triggered the run: a promotion verifies what it deploys,
+          # even if main has moved on since.
+          ref: ${{ github.head_ref || github.sha }}
           # The bot token (not GITHUB_TOKEN) is used for that push, because only a push made with
           # a real account's token starts a new pipeline run on the new commit. Without it the
           # PR's newest commit would have no green check and could never merge.
