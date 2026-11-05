@@ -1,0 +1,46 @@
+{
+  "tier" : "regression",
+  "verdict" : "PASS",
+  "attempt" : 2,
+  "executed" : 11,
+  "passed" : 11,
+  "failed" : 0,
+  "flaky" : 0,
+  "skipped" : 6,
+  "effectivePassed" : 11,
+  "passRate" : 100.0,
+  "flakeRate" : 0.0,
+  "passRateThreshold" : 80.0,
+  "maxFlakeRate" : 20.0,
+  "classification" : "NONE",
+  "reason" : null,
+  "action" : "Gate passed.",
+  "owner" : null,
+  "runbook" : null,
+  "nextStep" : null,
+  "failures" : [ ],
+  "flakyTests" : [ ],
+  "newlyQuarantined" : [ {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#currencyFormattingFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (currency-format): fails first attempt, passes on retry",
+    "jira" : "CQGP-10",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#searchResultsOrderFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (search-order): fails first attempt, passes on retry",
+    "jira" : "CQGP-11",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#additionalNeedsTrimFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (needs-trim): fails first attempt, passes on retry",
+    "jira" : "CQGP-12",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  } ],
+  "firstAttemptReason" : "Quality gate breached: flake rate 21.4%, above 20% limit (3 test(s) passed only on retry)"
+}
