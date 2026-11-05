@@ -144,6 +144,7 @@ jobs:
           mkdir -p evidence
           cp -r gate-results evidence/ 2>/dev/null || true
           cp quarantine.json evidence/ 2>/dev/null || true
+          cp -r gate-evaluator/target/site/jacoco evidence/coverage 2>/dev/null || true
           for m in api-tests ui-tests; do
             mkdir -p "evidence/$m"
             cp -r "$m/target/reports" "evidence/$m/" 2>/dev/null || true
