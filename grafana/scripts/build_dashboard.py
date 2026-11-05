@@ -36,7 +36,8 @@ QUERIES = {
     "latest": f"( $r := {newest(1)}; {{ 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger }} )",
     "green": f"( $r := {newest(20)}; {{ 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) }} )",
     "quarantine": f"( $r := {newest(1)}; {{ 'size': $r.quarantineSize }} )",
-    "scored": "{ 'runs': eligibleRuns, 'over': $count(tests[score >= $$.quarantineScore]) }",
+    # Bind the document to a variable: Grafana's engine resolves bare paths on an object root to null.
+    "scored": "( $d := $; { 'runs': $d.eligibleRuns, 'over': $count($d.tests[score >= $d.quarantineScore]) } )",
     "noncritical": (
         f"$sort({REAL}[gates.regression.executed > 0].{{ 'date': " + DATE + ", 'pass': gates.regression.passRate,"
         " 'flake': gates.regression.flakeRate, 'passMin': gates.regression.passRateThreshold,"
@@ -50,10 +51,10 @@ QUERIES = {
         f"$sort({REAL}[trigger = 'pull_request'].{{ 'date': " + DATE + ", 'minutes': $round(durationSec / 60, 1),"
         f" 'budget': 10 }}, {BY_DATE})"
     ),
-    "flaky": "( $t := tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
+    "flaky": "( $d := $; $t := $d.tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
     "recent": (
-        f"{newest(15)}.{{ 'date': " + DATE + ", 'trigger': trigger, 'branch': branch, 'scope': scope,"
-        " 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }"
+        f"( $r := {newest(15)}; $r.{{ 'date': " + DATE + ", 'trigger': trigger, 'branch': branch, 'scope': scope,"
+        " 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl } )"
     ),
 }
 

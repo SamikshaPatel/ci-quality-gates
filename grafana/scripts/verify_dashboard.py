@@ -35,12 +35,14 @@ for panel in board["panels"]:
     rows = len(frames[0]["data"]["values"][0]) if frames and frames[0]["data"]["values"] else 0
     expected = [c["text"] for c in target["columns"]]
     missing = [n for n in expected if n not in names] if rows else []
+    first = {f["name"]: fr["data"]["values"][i][0] for fr in frames[:1]
+             for i, f in enumerate(fr["schema"]["fields"]) if rows}
+    if rows and all(v is None for v in first.values()):
+        result["error"] = "every value is null: the query matched nothing in the data"
     if result.get("error") or missing:
         failures += 1
         print(f"FAIL  {panel['title']}: {result.get('error') or 'missing columns ' + str(missing)}")
     else:
-        first = {f["name"]: fr["data"]["values"][i][0] for fr in frames[:1]
-                 for i, f in enumerate(fr["schema"]["fields"]) if rows}
         print(f"ok    {panel['title']}: {rows} row(s) {json.dumps(first)[:160]}")
 
 print(f"{len(board['panels']) - failures} of {len(board['panels'])} panel queries succeeded")

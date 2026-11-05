@@ -339,7 +339,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "{ 'runs': eligibleRuns, 'over': $count(tests[score >= $$.quarantineScore]) }",
+          "root_selector": "( $d := $; { 'runs': $d.eligibleRuns, 'over': $count($d.tests[score >= $d.quarantineScore]) } )",
           "columns": [
             {
               "selector": "over",
@@ -860,7 +860,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $t := tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
+          "root_selector": "( $d := $; $t := $d.tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
           "columns": [
             {
               "selector": "id",
@@ -982,7 +982,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $x := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 15 }).{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }; $exists($x) ? $x : [] )",
+          "root_selector": "( $x := ( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 15 }); $r.{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl } ); $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
