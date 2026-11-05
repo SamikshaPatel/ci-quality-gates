@@ -1,5 +1,58 @@
 [
   {
+    "id": "42043601415-1",
+    "folder": "2026-11-05_141946_run42043601415-1",
+    "date": "2026-11-05T14:19:46.987820975Z",
+    "trigger": "pull_request",
+    "scenario": "quarantine-cap",
+    "branch": "demo/quarantine-cap",
+    "pr": "6",
+    "sha": "8687677",
+    "runUrl": "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043601415",
+    "verdict": "FAILED",
+    "reason": "Quality gate breached: flake rate 35.3%, above 20% limit (6 test(s) passed only on retry); quarantine cap reached: 6 tests would be quarantined, cap is 5",
+    "owner": "QA lead",
+    "classification": "NONE",
+    "durationSec": 121,
+    "quarantineSize": 0,
+    "quarantinedThisRun": 0,
+    "gates": {
+      "smoke": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 5,
+        "passed": 5,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "critical": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 9,
+        "passed": 9,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "regression": {
+        "verdict": "FAIL",
+        "attempt": 1,
+        "executed": 17,
+        "passed": 17,
+        "flaky": 6,
+        "passRate": 100.0,
+        "flakeRate": 35.3,
+        "passRateThreshold": 80.0,
+        "maxFlakeRate": 20.0
+      }
+    }
+  },
+  {
     "id": "42043588455-1",
     "folder": "2026-11-05_141936_run42043588455-1",
     "date": "2026-11-05T14:19:36.722204912Z",

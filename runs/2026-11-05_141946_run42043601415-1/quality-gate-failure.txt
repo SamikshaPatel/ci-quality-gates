@@ -1,0 +1,15 @@
+QUALITY GATE BREACHED
+gate: regression
+reason: Quality gate breached: flake rate 35.3%, above 20% limit (6 test(s) passed only on retry); quarantine cap reached: 6 tests would be quarantined, cap is 5
+classification: NONE
+pass_rate: 100.0 (threshold 80.0)
+flake_rate: 35.3 (max 20.0)
+owner: QA lead
+runbook: docs/runbooks/quality-gate-failure.md
+next_step: Quarantine is full. Fix or remove quarantined tests before more can be quarantined — an uncapped quarantine is where failing tests go to hide.
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#dateLocaleFlaky | FLAKY | CODE | Simulated flaky failure (date-locale): fails first attempt, passes on retry
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#currencyFormattingFlaky | FLAKY | CODE | Simulated flaky failure (currency-format): fails first attempt, passes on retry
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#searchResultsOrderFlaky | FLAKY | CODE | Simulated flaky failure (search-order): fails first attempt, passes on retry
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#paginationBoundaryFlaky | FLAKY | CODE | Simulated flaky failure (pagination): fails first attempt, passes on retry
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#additionalNeedsTrimFlaky | FLAKY | CODE | Simulated flaky failure (needs-trim): fails first attempt, passes on retry
+test: io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#cacheHeaderFlaky | FLAKY | CODE | Simulated flaky failure (cache-header): fails first attempt, passes on retry
