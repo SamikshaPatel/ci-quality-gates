@@ -20,14 +20,22 @@ DS = {"type": "yesoreyeram-infinity-datasource", "uid": PROVISIONED_UID}
 
 # Real runs only: demo scenarios fail on purpose and would skew every trend.
 REAL = "$filter($, function($v){ $v.scenario = 'none' })"
+
+
+def newest(n):
+    """The n newest real runs. runs.json is newest first. Index filtering, because Grafana's
+    JSONata engine ignores range predicates such as [[0..19]]."""
+    return f"$filter({REAL}, function($v, $i){{ $i < {n} }})"
+
+
 BY_DATE = "function($a, $b){ $a.date > $b.date }"
 # Second precision: some parsers reject the nanosecond fractions Java writes.
 DATE = "$substring(date, 0, 19) & 'Z'"
 
 QUERIES = {
-    "latest": f"( $r := {REAL}[0]; {{ 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger }} )",
-    "green": f"( $r := {REAL}[[0..19]]; {{ 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) }} )",
-    "quarantine": f"( $r := {REAL}[0]; {{ 'size': $r.quarantineSize }} )",
+    "latest": f"( $r := {newest(1)}; {{ 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger }} )",
+    "green": f"( $r := {newest(20)}; {{ 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) }} )",
+    "quarantine": f"( $r := {newest(1)}; {{ 'size': $r.quarantineSize }} )",
     "scored": "{ 'runs': eligibleRuns, 'over': $count(tests[score >= $$.quarantineScore]) }",
     "noncritical": (
         f"$sort({REAL}[gates.regression.executed > 0].{{ 'date': " + DATE + ", 'pass': gates.regression.passRate,"
@@ -44,7 +52,7 @@ QUERIES = {
     ),
     "flaky": "( $t := tests[failed + flaky > 0]; $t ? $sort($t, function($a, $b){ $a.score < $b.score }) : [] )",
     "recent": (
-        f"{REAL}[[0..14]].{{ 'date': " + DATE + ", 'trigger': trigger, 'branch': branch, 'scope': scope,"
+        f"{newest(15)}.{{ 'date': " + DATE + ", 'trigger': trigger, 'branch': branch, 'scope': scope,"
         " 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }"
     ),
 }

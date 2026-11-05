@@ -39,7 +39,9 @@ for panel in board["panels"]:
         failures += 1
         print(f"FAIL  {panel['title']}: {result.get('error') or 'missing columns ' + str(missing)}")
     else:
-        print(f"ok    {panel['title']}: {rows} row(s)")
+        first = {f["name"]: fr["data"]["values"][i][0] for fr in frames[:1]
+                 for i, f in enumerate(fr["schema"]["fields"]) if rows}
+        print(f"ok    {panel['title']}: {rows} row(s) {json.dumps(first)[:160]}")
 
 print(f"{len(board['panels']) - failures} of {len(board['panels'])} panel queries succeeded")
 sys.exit(1 if failures else 0)

@@ -66,7 +66,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $r := $filter($, function($v){ $v.scenario = 'none' })[0]; { 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger } )",
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 1 }); { 'verdict': $r.verdict, 'branch': $r.branch, 'trigger': $r.trigger } )",
           "columns": [
             {
               "selector": "verdict",
@@ -153,7 +153,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $r := $filter($, function($v){ $v.scenario = 'none' })[[0..19]]; { 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) } )",
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 20 }); { 'green': $round(100 * $count($r[verdict = 'PASSED']) / $count($r), 1), 'runs': $count($r) } )",
           "columns": [
             {
               "selector": "green",
@@ -240,7 +240,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $r := $filter($, function($v){ $v.scenario = 'none' })[0]; { 'size': $r.quarantineSize } )",
+          "root_selector": "( $r := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 1 }); { 'size': $r.quarantineSize } )",
           "columns": [
             {
               "selector": "size",
@@ -965,7 +965,7 @@
             "method": "GET",
             "data": ""
           },
-          "root_selector": "( $x := $filter($, function($v){ $v.scenario = 'none' })[[0..14]].{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }; $exists($x) ? $x : [] )",
+          "root_selector": "( $x := $filter($filter($, function($v){ $v.scenario = 'none' }), function($v, $i){ $i < 15 }).{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }; $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
