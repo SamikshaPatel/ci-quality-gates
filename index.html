@@ -94,7 +94,7 @@ const triggerLabel = r => ({
   pull_request: r.pr ? `PR #${r.pr}` : 'Pull request',
   workflow_dispatch: 'Manual',
   schedule: 'Nightly',
-  push: 'Release',
+  push: r.stage ? `Promotion · ${r.stage}` : (r.branch === 'main' ? 'Merge to main' : 'Release'),
   jenkins: 'Jenkins'
 }[r.trigger] || r.trigger || '—');
 

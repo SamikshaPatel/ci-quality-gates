@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`.github/workflows/pr.yml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ ".github/workflows/pr.yml", ".github/workflows/promote.yml", "README.md", "docs/adr/0011-promotion-with-approvals.md", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunHistory.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunReport.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/RunReportTest.java", "site/index.html" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
