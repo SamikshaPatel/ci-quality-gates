@@ -1,5 +1,36 @@
 [
   {
+    "id": "42043567116-1",
+    "folder": "2026-11-05_141900_run42043567116-1",
+    "date": "2026-11-05T14:19:00.385690553Z",
+    "trigger": "pull_request",
+    "scenario": "env-down",
+    "branch": "demo/env-down",
+    "pr": "2",
+    "sha": "9932a70",
+    "runUrl": "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043567116",
+    "verdict": "FAILED",
+    "reason": "Smoke gate breached: pass rate 40%, below 100% threshold (3 failed, classified ENV)",
+    "owner": "DevOps",
+    "classification": "ENV",
+    "durationSec": 87,
+    "quarantineSize": 0,
+    "quarantinedThisRun": 0,
+    "gates": {
+      "smoke": {
+        "verdict": "FAIL",
+        "attempt": 1,
+        "executed": 5,
+        "passed": 2,
+        "flaky": 0,
+        "passRate": 40.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      }
+    }
+  },
+  {
     "id": "42041886218-1",
     "folder": "2026-11-05_140854_run42041886218-1",
     "date": "2026-11-05T14:08:54.576092986Z",

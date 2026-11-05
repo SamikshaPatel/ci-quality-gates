@@ -1,0 +1,11 @@
+QUALITY GATE BREACHED
+gate: smoke
+reason: Smoke gate breached: pass rate 40%, below 100% threshold (3 failed, classified ENV)
+classification: ENV
+pass_rate: 40.0 (threshold 100.0)
+owner: DevOps
+runbook: docs/runbooks/smoke-failure.md
+next_step: Check the service containers (docker compose ps / logs) and the SauceDemo site. If healthy, rerun the workflow.
+test: io.github.samikshapatel.qg.api.ApiSmokeTest#healthCheckReturns201 | FAILED | ENV | Connection refused (connect failed)
+test: io.github.samikshapatel.qg.api.ApiSmokeTest#authReturnsToken | FAILED | ENV | Connection refused (connect failed)
+test: io.github.samikshapatel.qg.api.ApiSmokeTest#bookingListReturnsIds | FAILED | ENV | Connection refused (connect failed)

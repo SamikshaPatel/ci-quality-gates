@@ -1,0 +1,40 @@
+{
+  "tier" : "smoke",
+  "verdict" : "FAIL",
+  "attempt" : 1,
+  "executed" : 5,
+  "passed" : 2,
+  "failed" : 3,
+  "flaky" : 0,
+  "skipped" : 1,
+  "effectivePassed" : 2,
+  "passRate" : 40.0,
+  "flakeRate" : 0.0,
+  "passRateThreshold" : 100.0,
+  "maxFlakeRate" : null,
+  "classification" : "ENV",
+  "reason" : "Smoke gate breached: pass rate 40%, below 100% threshold (3 failed, classified ENV)",
+  "action" : "Hard stop: build marked failed, PR blocked. Later gates skipped. No quarantine (smoke tests are never quarantined).",
+  "owner" : "DevOps",
+  "runbook" : "docs/runbooks/smoke-failure.md",
+  "nextStep" : "Check the service containers (docker compose ps / logs) and the SauceDemo site. If healthy, rerun the workflow.",
+  "failures" : [ {
+    "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#healthCheckReturns201",
+    "status" : "FAILED",
+    "classification" : "ENV",
+    "message" : "Connection refused (connect failed)"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#authReturnsToken",
+    "status" : "FAILED",
+    "classification" : "ENV",
+    "message" : "Connection refused (connect failed)"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#bookingListReturnsIds",
+    "status" : "FAILED",
+    "classification" : "ENV",
+    "message" : "Connection refused (connect failed)"
+  } ],
+  "flakyTests" : [ ],
+  "newlyQuarantined" : [ ],
+  "firstAttemptReason" : null
+}
