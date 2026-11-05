@@ -23,6 +23,21 @@
 - A **quarantined** test is skipped by the PR gates, so it no longer affects the gate result. It keeps running nightly.
 - The 80% baseline tightens as real run data comes in. Each change is recorded in `threshold_history` in `quality-gates.yml`.
 
+## Which tests a PR runs
+
+A PR runs only the gates its changes can affect ([ADR-0010](docs/adr/0010-impact-based-selection.md)); the rules live in the `impact` section of `quality-gates.yml`.
+
+| Changed files | Gates that run |
+|---|---|
+| Documentation only | No test gates. Evaluator tests and security checks still run |
+| API test code only | Smoke on every module; contract, critical and regression for the API module |
+| UI test code only | Smoke on every module; critical and regression for the UI module |
+| Both, or anything else | The full suite |
+
+- A gate that is not needed is recorded as **NOT SELECTED** with the reason, never skipped silently.
+- New or changed test classes must pass **3 runs in a row with no retries**, or the PR is blocked.
+- Nightly, releases, manual runs and demo scenarios always run the full suite.
+
 ## Who acts on a failure
 
 The gate evaluator tags each failure **ENV** (timeout, 5xx, unreachable host) or **CODE** (assertion against a healthy environment). The tag picks the owner, so no one has to ask QA.
@@ -35,6 +50,7 @@ The gate evaluator tags each failure **ENV** (timeout, 5xx, unreachable host) or
 | Critical tier, any failure or flake | Build failed, PR blocked | PR author, QA reviews | [critical-failure](docs/runbooks/critical-failure.md) |
 | Non-critical, pass rate below threshold | Build failed, PR blocked | PR author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 | Non-critical, flake rate over limit | Flaky tests quarantined, ticket opened per test, gate reruns | QA, with the test's author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
+| Stability check, a new or changed test failed a run | Build failed, PR blocked | PR author | [ADR-0010](docs/adr/0010-impact-based-selection.md) |
 | Quarantine cap would be exceeded | Quarantine refused, build failed, PR blocked | QA lead | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 
 ## Quarantine rules

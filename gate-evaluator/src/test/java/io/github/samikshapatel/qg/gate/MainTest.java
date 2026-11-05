@@ -136,6 +136,52 @@ class MainTest {
     }
 
     @Test
+    void planWritesTestPlanAndReportShowsSelection() throws IOException {
+        Path changed = tmp.resolve("changed.txt");
+        Files.writeString(changed, "README.md\ndocs/test-plan.md\n");
+        Map<String, String> o = new HashMap<>(opts("smoke", tmp));
+        o.put("changed", changed.toString());
+        assertEquals(Main.PASS, Main.plan(o));
+        assertEquals("docs", MAPPER.readValue(tmp.resolve("out/test-plan.json").toFile(), ImpactPlanner.Plan.class).scope);
+
+        for (String tier : RunReport.ORDER) {
+            Map<String, String> skip = new HashMap<>(opts(tier, tmp));
+            skip.put("not-selected", "Documentation only");
+            assertEquals(Main.PASS, Main.evaluate(skip, Map.of()));
+        }
+        assertEquals(Main.PASS, Main.report(opts("smoke", tmp), Map.of()));
+        String report = Files.readString(tmp.resolve("out/run-report.md"));
+        assertTrue(report.contains("**Result: ✅ PASSED — merge allowed**"), report);
+        assertTrue(report.contains("**Test selection:** scope `docs`"), report);
+        assertTrue(report.contains("| Smoke | ⏭️ NOT SELECTED | not needed for this change |"), report);
+        RunHistory.Entry entry = MAPPER.readValue(tmp.resolve("out/history-entry.json").toFile(), RunHistory.Entry.class);
+        assertEquals("docs", entry.scope);
+        assertEquals("PASSED", entry.verdict);
+    }
+
+    @Test
+    void failedStabilityCheckBlocksTheRun() throws IOException {
+        Path r = reports("smoke", pass("ApiSmokeTest", "ping"));
+        Main.evaluate(opts("smoke", r), Map.of());
+        Files.writeString(tmp.resolve("out/stability.md"), "### Stability check\n- ❌ `BookingContractTest` failed on run 2 of 3\n");
+        Files.writeString(tmp.resolve("out/stability-failed"), "");
+        Main.report(opts("smoke", tmp), Map.of());
+        String report = Files.readString(tmp.resolve("out/run-report.md"));
+        assertTrue(report.contains("**Result: ❌ FAILED — merge blocked**"), report);
+        assertTrue(report.contains("failed on run 2 of 3"), report);
+        RunHistory.Entry entry = MAPPER.readValue(tmp.resolve("out/history-entry.json").toFile(), RunHistory.Entry.class);
+        assertEquals("FAILED", entry.verdict);
+    }
+
+    @Test
+    void planFullWhenAsked() throws IOException {
+        Map<String, String> o = new HashMap<>(opts("smoke", tmp));
+        o.put("full", "Nightly run");
+        assertEquals(Main.PASS, Main.plan(o));
+        assertEquals("full", MAPPER.readValue(tmp.resolve("out/test-plan.json").toFile(), ImpactPlanner.Plan.class).scope);
+    }
+
+    @Test
     void retriesComeFromConfig() throws IOException {
         Map<String, String> o = Map.of("tier", "regression", "config", "../quality-gates.yml");
         assertEquals(Main.PASS, Main.retries(o));

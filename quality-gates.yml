@@ -27,6 +27,16 @@ noncritical:
   threshold_history:
     - { date: 2026-11-04, pass_rate: 80, max_flake_rate: 20, reason: "Initial baseline" }
 
+impact:
+  # Impact-based test selection on pull requests (ADR-0010). Each changed file is matched in
+  # this order: docs, then api, then ui. A file matching none of them (build files, shared code,
+  # gates, pipelines) needs the full suite, and so does a PR touching both api and ui.
+  # A pattern without a slash matches a file name at any depth.
+  docs: ["*.md", "docs/**", "site/**", "LICENSE"]
+  api: ["api-tests/**"]
+  ui: ["ui-tests/**"]
+  stability_runs: 3       # a new or changed test class must pass this many runs in a row
+
 quarantine:
   max_tests: 5            # cap: above this, quarantine refuses and the PR is blocked
   max_age_days: 14        # nightly alerts when a test sits in quarantine longer than this

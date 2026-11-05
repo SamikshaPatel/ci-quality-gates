@@ -24,6 +24,8 @@ import java.util.Optional;
  * report   writes gate-results/run-report.md and appends it to the GitHub job summary
  * review   nightly quarantine review: green streaks, releases, age alerts (exit 2 = overdue)
  * retries  prints the configured retry count for --tier
+ * plan     impact analysis: --changed file-list | --full "reason"; writes test-plan.json, prints KEY=VALUE for $GITHUB_ENV
+ *          evaluate --not-selected "reason" records a gate that this change did not need
  * </pre>
  * Common options: --config quality-gates.yml --quarantine quarantine.json --out gate-results
  */
@@ -50,6 +52,7 @@ public final class Main {
             case "report" -> report(opts, System.getenv());
             case "review" -> review(opts);
             case "retries" -> retries(opts);
+            case "plan" -> plan(opts);
             default -> {
                 System.err.println("Unknown command: " + args[0]);
                 yield FAIL;
@@ -61,10 +64,17 @@ public final class Main {
     /** The environment is passed in, not read globally, so tests never reach real Jira or the job summary. */
     static int evaluate(Map<String, String> opts, Map<String, String> env) throws IOException {
         String tier = required(opts, "tier");
+        Path out = Path.of(opts.getOrDefault("out", "gate-results"));
+        if (opts.containsKey("not-selected")) {
+            Files.createDirectories(out);
+            GateResult skipped = GateResult.notSelected(tier, opts.get("not-selected"));
+            MAPPER.writeValue(out.resolve(tier + ".json").toFile(), skipped);
+            System.out.println("[gate] " + RunReport.label(tier) + ": NOT SELECTED — " + skipped.reason);
+            return PASS;
+        }
         int attempt = Integer.parseInt(opts.getOrDefault("attempt", "1"));
         GateConfig config = GateConfig.load(Path.of(opts.getOrDefault("config", "quality-gates.yml")));
         QuarantineStore quarantine = QuarantineStore.load(Path.of(opts.getOrDefault("quarantine", "quarantine.json")));
-        Path out = Path.of(opts.getOrDefault("out", "gate-results"));
         Files.createDirectories(out);
 
         List<TestResult> results = SurefireParser.parse(reportDirs(opts));
@@ -96,6 +106,7 @@ public final class Main {
             case PASS -> PASS;
             case FAIL -> FAIL;
             case QUARANTINE_RERUN -> QUARANTINE_RERUN;
+            case NOT_SELECTED -> PASS;
         };
     }
 
@@ -114,12 +125,30 @@ public final class Main {
         if (Files.exists(reviewFile)) {
             review = Optional.of(MAPPER.readValue(reviewFile.toFile(), QuarantineReview.Summary.class));
         }
-        String markdown = new RunReport(env).render(results, review);
+        Optional<ImpactPlanner.Plan> plan = Optional.empty();
+        Path planFile = out.resolve("test-plan.json");
+        if (Files.exists(planFile)) {
+            plan = Optional.of(MAPPER.readValue(planFile.toFile(), ImpactPlanner.Plan.class));
+        }
+        Path stabilityFile = out.resolve("stability.md");
+        String stability = Files.exists(stabilityFile) ? Files.readString(stabilityFile) : null;
+        boolean stabilityFailed = Files.exists(out.resolve("stability-failed"));
+
+        String markdown = new RunReport(env)
+                .withSelection(plan.map(ImpactPlanner.Plan::note).orElse(null))
+                .withStability(stability, stabilityFailed)
+                .render(results, review);
         Files.writeString(out.resolve("run-report.md"), markdown);
 
         // One summary line per run for the run-history site (newest first, trends over time).
         int quarantineSize = QuarantineStore.load(Path.of(opts.getOrDefault("quarantine", "quarantine.json"))).size();
         RunHistory.Entry entry = RunHistory.entry(results, quarantineSize, env, java.time.Instant.now());
+        entry.scope = plan.map(p -> p.scope).orElse("full");
+        if (stabilityFailed) {
+            entry.verdict = "FAILED";
+            entry.reason = "Stability check failed: a new or changed test did not pass every run";
+            entry.owner = "PR author";
+        }
         MAPPER.writeValue(out.resolve("history-entry.json").toFile(), entry);
 
         String summary = env.get("GITHUB_STEP_SUMMARY");
@@ -142,6 +171,26 @@ public final class Main {
         System.out.println("[gate] Quarantine review: " + summary.remaining + " remaining, released "
                 + summary.released + ", overdue " + summary.overdue);
         return summary.overdue.isEmpty() ? PASS : OVERDUE;
+    }
+
+    static int plan(Map<String, String> opts) throws IOException {
+        Path out = Path.of(opts.getOrDefault("out", "gate-results"));
+        Files.createDirectories(out);
+        Map<String, Object> root;
+        try (var reader = Files.newBufferedReader(Path.of(opts.getOrDefault("config", "quality-gates.yml")))) {
+            root = new org.yaml.snakeyaml.Yaml().load(reader);
+        }
+        ImpactPlanner.Rules rules = ImpactPlanner.rules(root);
+        ImpactPlanner.Plan plan;
+        if (opts.containsKey("full")) {
+            plan = ImpactPlanner.full(opts.get("full"), rules.stabilityRuns());
+        } else {
+            List<String> changed = Files.readAllLines(Path.of(required(opts, "changed")));
+            plan = ImpactPlanner.plan(changed, rules, f -> Files.exists(Path.of(f)));
+        }
+        MAPPER.writeValue(out.resolve("test-plan.json").toFile(), plan);
+        System.out.print(ImpactPlanner.envLines(plan));
+        return PASS;
     }
 
     /** Prints the retry count for a tier, so scripts take it from quality-gates.yml, not a hard-coded flag. */

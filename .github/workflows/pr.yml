@@ -62,6 +62,8 @@ jobs:
           # a real account's token starts a new pipeline run on the new commit. Without it the
           # PR's newest commit would have no green check and could never merge.
           token: ${{ secrets.QUALITY_BOT_TOKEN || github.token }}
+          # Full history, so impact analysis can diff the PR against its base branch.
+          fetch-depth: 0
 
       - name: Pick the demo scenario
         env:
@@ -80,6 +82,23 @@ jobs:
           echo "Demo scenario: ${scenario}"
 
       - uses: ./.github/actions/setup-env
+
+      - name: Plan the test scope (impact analysis)
+        # On a PR, the changed files decide which gates and test modules run (ADR-0010).
+        # Everything else (manual runs, releases, demo scenarios) runs the full suite.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          jar=gate-evaluator/target/gate-evaluator.jar
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${DEMO_SCENARIO}" == "none" ]]; then
+            git fetch -q origin "${BASE_REF}"
+            git diff --name-only "origin/${BASE_REF}...HEAD" > gate-results/changed-files.txt
+            echo "Changed files:"; cat gate-results/changed-files.txt
+            java -jar "$jar" plan --changed gate-results/changed-files.txt >> "$GITHUB_ENV"
+          else
+            java -jar "$jar" plan --full "Not a pull request, or a demo scenario, so the full suite runs" >> "$GITHUB_ENV"
+          fi
+          jq -r '"[gate] Test scope: \(.scope) — \(.reason)"' gate-results/test-plan.json
 
       - name: "Demo scenario env-down: stop the API mid-pipeline"
         if: env.DEMO_SCENARIO == 'env-down'
@@ -100,6 +119,10 @@ jobs:
       - name: "Gate 4 — Non-critical tier (pass rate and flake rate, quarantine)"
         id: regression
         run: scripts/run-regression.sh
+
+      - name: "Stability — new or changed tests pass every run"
+        if: success() && env.STABILITY_TESTS != ''
+        run: scripts/stability-check.sh
 
       - name: Run report
         if: always()
