@@ -1,0 +1,30 @@
+{
+  "tier" : "critical",
+  "verdict" : "FAIL",
+  "attempt" : 1,
+  "executed" : 10,
+  "passed" : 9,
+  "failed" : 0,
+  "flaky" : 1,
+  "skipped" : 0,
+  "effectivePassed" : 9,
+  "passRate" : 90.0,
+  "flakeRate" : 10.0,
+  "passRateThreshold" : 100.0,
+  "maxFlakeRate" : null,
+  "classification" : "CODE",
+  "reason" : "Critical gate breached: pass rate 90%, below 100% threshold (1 passed only on retry — no retry credit on the critical path)",
+  "action" : "Build marked failed, PR blocked. Critical tests are never quarantined.",
+  "owner" : "PR author (QA reviews)",
+  "runbook" : "docs/runbooks/critical-failure.md",
+  "nextStep" : "Treat the intermittent failure as a real defect: a critical flow that fails once in production fails a customer.",
+  "failures" : [ {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$CriticalFlakeFault#bookingTotalIntermittentlyWrong",
+    "status" : "FLAKY",
+    "classification" : "CODE",
+    "message" : "Simulated intermittent failure: booking total was 0 on first read"
+  } ],
+  "flakyTests" : [ ],
+  "newlyQuarantined" : [ ],
+  "firstAttemptReason" : null
+}
