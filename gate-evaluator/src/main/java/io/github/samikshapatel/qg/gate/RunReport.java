@@ -191,6 +191,10 @@ public class RunReport {
         if (!scenario.isBlank() && !"none".equals(scenario)) {
             c.append(" · demo scenario: `").append(scenario).append('`');
         }
+        String stage = env.getOrDefault("DEPLOY_STAGE", "");
+        if (!stage.isBlank()) {
+            c.append(" · promotion stage: `").append(stage).append('`');
+        }
         return c.toString();
     }
 

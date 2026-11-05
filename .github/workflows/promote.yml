@@ -1,0 +1,183 @@
+name: Promote
+
+# Every merge to main is promoted QA → Staging → Production (ADR-0011):
+#   build once      one versioned artifact, checksummed; every environment gets exactly that file
+#   QA              deploy, then the full quality gates
+#   Staging         deploy, open a change record in Jira, then the full quality gates again
+#   Production      waits for a human approval (GitHub Environment "production"), deploys,
+#                   runs a post-deployment smoke check and closes the loop on the change record
+#
+# There is no application in this repo, so the promoted artifact is the quality-gate toolkit
+# itself (evaluator, gate config, scripts). The point is the mechanics: one artifact, promoted
+# through environments, gated at every step, with an approval and an audit trail.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# One promotion at a time; a newer merge waits for the current one instead of overtaking it.
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+env:
+  JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+  JIRA_PROJECT_KEY: ${{ vars.JIRA_PROJECT_KEY }}
+
+jobs:
+  build:
+    name: Build once
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build and package the versioned artifact
+        id: package
+        run: |
+          version="1.0.${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          mvn -B -ntp -q install -pl test-support,gate-evaluator -am -DskipTests
+          mkdir -p dist/toolkit
+          cp gate-evaluator/target/gate-evaluator.jar quality-gates.yml CI_CONTRACT.md dist/toolkit/
+          cp -r scripts dist/toolkit/
+          echo "${version}" > dist/toolkit/VERSION
+          echo "${GITHUB_SHA}" > dist/toolkit/COMMIT
+          (cd dist && zip -qr "quality-gates-${version}.zip" toolkit)
+          sha=$(sha256sum "dist/quality-gates-${version}.zip" | cut -d' ' -f1)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha}" >> "$GITHUB_OUTPUT"
+          echo "### Built ${version}" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA-256: \`${sha}\`. Every environment below verifies it received exactly this file." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact
+          path: dist/quality-gates-${{ steps.package.outputs.version }}.zip
+          retention-days: 90
+
+  deploy-qa:
+    name: Deploy to QA
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+      url: https://samikshapatel.github.io/ci-quality-gates/
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+      - name: Verify it is the artifact that was built
+        run: |
+          echo "${{ needs.build.outputs.sha256 }}  quality-gates-${{ needs.build.outputs.version }}.zip" | sha256sum --check
+      - name: Deploy
+        run: |
+          echo "Deploying ${{ needs.build.outputs.version }} to QA."
+          echo "### QA: deployed ${{ needs.build.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+
+  gates-qa:
+    name: QA gates
+    needs: deploy-qa
+    uses: ./.github/workflows/pr.yml
+    with:
+      stage: qa
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [build, gates-qa]
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://samikshapatel.github.io/ci-quality-gates/
+    outputs:
+      change: ${{ steps.change.outputs.key }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+      - name: Verify it is the artifact QA tested
+        run: |
+          echo "${{ needs.build.outputs.sha256 }}  quality-gates-${{ needs.build.outputs.version }}.zip" | sha256sum --check
+      - name: Deploy
+        run: |
+          echo "Deploying ${{ needs.build.outputs.version }} to Staging."
+          echo "### Staging: deployed ${{ needs.build.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Open a change record in Jira
+        id: change
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [[ -z "${JIRA_BASE_URL}" || -z "${JIRA_EMAIL}" || -z "${JIRA_API_TOKEN}" || -z "${JIRA_PROJECT_KEY}" ]]; then
+            echo "::warning::Jira is not configured, so no change record was opened."; exit 0
+          fi
+          text="Change record for ${VERSION} (commit ${GITHUB_SHA::7}). Passed QA gates; deployed to Staging. Production needs approval in the promotion run: ${RUN_URL}"
+          body=$(jq -n --arg p "$JIRA_PROJECT_KEY" --arg s "Change: promote ${VERSION} to production" --arg t "$text" \
+            '{fields: {project: {key: $p}, issuetype: {name: "Task"}, summary: $s, labels: ["change-record", "ci-quality-gate"],
+              description: {type: "doc", version: 1, content: [{type: "paragraph", content: [{type: "text", text: $t}]}]}}}')
+          key=$(curl -sS --fail-with-body -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" -H "Content-Type: application/json" \
+            -X POST "${JIRA_BASE_URL%/}/rest/api/3/issue" -d "$body" | jq -r .key) || { echo "::warning::Jira call failed"; exit 0; }
+          echo "key=${key}" >> "$GITHUB_OUTPUT"
+          echo "Change record: [${key}](${JIRA_BASE_URL%/}/browse/${key})" >> "$GITHUB_STEP_SUMMARY"
+
+  gates-staging:
+    name: Staging gates
+    needs: deploy-staging
+    uses: ./.github/workflows/pr.yml
+    with:
+      stage: staging
+    secrets: inherit
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [build, deploy-staging, gates-staging]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Required reviewers on the "production" environment make this job wait for a human approval.
+    environment:
+      name: production
+      url: https://samikshapatel.github.io/ci-quality-gates/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact
+      - name: Verify it is the artifact Staging tested
+        run: |
+          echo "${{ needs.build.outputs.sha256 }}  quality-gates-${{ needs.build.outputs.version }}.zip" | sha256sum --check
+      - name: Deploy
+        run: |
+          echo "Deploying ${{ needs.build.outputs.version }} to Production."
+          echo "### Production: deployed ${{ needs.build.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: ./.github/actions/setup-env
+      - name: Post-deployment smoke check
+        env:
+          SELECTED_TIERS: smoke
+          SCOPE_REASON: "Post-deployment check: smoke only"
+        run: scripts/run-gate.sh smoke
+      - name: Record the deployment on the change record
+        if: always() && needs.deploy-staging.outputs.change != ''
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          KEY: ${{ needs.deploy-staging.outputs.change }}
+          OUTCOME: ${{ job.status }}
+          VERSION: ${{ needs.build.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          text="Production deployment of ${VERSION}: ${OUTCOME}. Approved in GitHub (environment: production). Run: ${RUN_URL}"
+          body=$(jq -n --arg t "$text" '{body: {type: "doc", version: 1, content: [{type: "paragraph", content: [{type: "text", text: $t}]}]}}')
+          curl -sS --fail-with-body -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" -H "Content-Type: application/json" \
+            -X POST "${JIRA_BASE_URL%/}/rest/api/3/issue/${KEY}/comment" -d "$body" > /dev/null || echo "::warning::Jira comment failed"
