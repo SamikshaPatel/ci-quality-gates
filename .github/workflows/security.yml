@@ -1,0 +1,51 @@
+name: Security
+
+# The security gate: runs beside the quality gates on every PR.
+#   CodeQL           static analysis of the Java code (security-extended queries).
+#                    Enforced by the ruleset's "Require code scanning results" rule.
+#   Dependency review fails a PR that adds a dependency with a known vulnerability
+#                    of high severity or worse. Enforced as a required status check.
+# Both are free on public repositories.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "41 5 * * 1"   # weekly, catches newly published vulnerabilities in unchanged code
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write   # upload results to the Security tab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: none       # analyses source directly; no Maven build needed
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:java-kotlin"
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write     # summary comment when it fails
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
