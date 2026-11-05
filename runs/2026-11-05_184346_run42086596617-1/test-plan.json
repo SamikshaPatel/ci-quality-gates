@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`.github/workflows/nightly.yml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ ".github/workflows/nightly.yml", ".github/workflows/pr.yml", "CI_CONTRACT.md", "README.md", "docs/adr/0013-flakiness-score.md", "docs/adr/0014-performance-gate.md", "docs/runbooks/performance-failure.md", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/Flakiness.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/Main.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/Performance.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunHistory.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunReport.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/FlakinessTest.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/MainTest.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/PerformanceTest.java", "perf/booking-load.js", "quality-gates.yml", "scripts/publish-history.sh", "scripts/run-performance.sh", "site/flaky.html", "site/index.html" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
