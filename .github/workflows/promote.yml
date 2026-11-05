@@ -37,8 +37,8 @@ jobs:
       version: ${{ steps.package.outputs.version }}
       sha256: ${{ steps.package.outputs.sha256 }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
@@ -59,7 +59,7 @@ jobs:
           echo "sha256=${sha}" >> "$GITHUB_OUTPUT"
           echo "### Built ${version}" >> "$GITHUB_STEP_SUMMARY"
           echo "SHA-256: \`${sha}\`. Every environment below verifies it received exactly this file." >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-artifact
           path: dist/quality-gates-${{ steps.package.outputs.version }}.zip
@@ -73,7 +73,7 @@ jobs:
       name: qa
       url: https://samikshapatel.github.io/ci-quality-gates/
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-artifact
       - name: Verify it is the artifact that was built
@@ -102,7 +102,7 @@ jobs:
     outputs:
       change: ${{ steps.change.outputs.key }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-artifact
       - name: Verify it is the artifact QA tested
@@ -150,8 +150,8 @@ jobs:
       name: production
       url: https://samikshapatel.github.io/ci-quality-gates/
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-artifact
       - name: Verify it is the artifact Staging tested
