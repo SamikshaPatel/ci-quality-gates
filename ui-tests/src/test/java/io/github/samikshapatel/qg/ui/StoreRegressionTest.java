@@ -11,7 +11,7 @@ import java.util.List;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Non-critical regression: sorting, cart edits, validation, product detail. Eligible for quarantine. */
+/** Non-critical regression: sorting, cart edits, form validation, product detail. Eligible for quarantine. */
 @Tag(Tier.REGRESSION)
 class StoreRegressionTest extends BaseUiTest {
 
