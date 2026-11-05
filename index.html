@@ -15,6 +15,7 @@
     <nav>
       <a href="https://github.com/SamikshaPatel/ci-quality-gates/blob/main/CI_CONTRACT.md">What green means</a>
       <a href="https://github.com/SamikshaPatel/ci-quality-gates/blob/main/quality-gates.yml">Gate config</a>
+      <a href="flaky.html">Flakiness scores</a>
       <a href="https://github.com/SamikshaPatel/ci-quality-gates/actions">GitHub Actions</a>
     </nav>
   </header>
@@ -26,6 +27,11 @@
       <h2>Non-critical tier: pass rate and flake rate</h2>
       <p class="sub">Real runs only. Dashed lines are the gate limits from quality-gates.yml.</p>
       <div class="chart-box"><canvas id="rateChart" aria-label="Pass and flake rate over time"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>API performance: p95 response time</h2>
+      <p class="sub">Nightly and Staging runs. The dashed line is the limit from quality-gates.yml.</p>
+      <div class="chart-box"><canvas id="perfChart" aria-label="API p95 response time over time"></canvas></div>
     </div>
     <div class="card">
       <h2>Pipeline duration</h2>
@@ -189,6 +195,24 @@ function renderCharts() {
         ]
       },
       options: { ...base, scales: { ...base.scales, y: { ...base.scales.y, min: 0, max: 100, ticks: { color: muted, callback: v => `${v}%` } } } }
+    });
+  }
+
+  const perf = real.filter(r => r.performance);
+  const perfBox = document.getElementById('perfChart').parentElement;
+  if (perf.length < 2 || typeof Chart === 'undefined') {
+    perfBox.replaceChildren(el('div', { className: 'empty', text: perf.length ? 'The trend appears after a second performance run.' : 'Appears after the first nightly or Staging performance run.' }));
+  } else {
+    new Chart(document.getElementById('perfChart'), {
+      type: 'line',
+      data: {
+        labels: perf.map(labels),
+        datasets: [
+          { label: 'p95 (ms)', data: perf.map(r => r.performance.p95Ms), borderColor: cssVar('--accent'), backgroundColor: cssVar('--accent'), tension: 0.2, pointRadius: 3 },
+          { label: `Limit ${perf.at(-1).performance.p95LimitMs} ms`, data: perf.map(r => r.performance.p95LimitMs), borderColor: cssVar('--fail'), borderDash: [6, 4], borderWidth: 1, pointRadius: 0 }
+        ]
+      },
+      options: { ...base, scales: { ...base.scales, y: { ...base.scales.y, min: 0 } } }
     });
   }
 

@@ -1,5 +1,85 @@
 [
   {
+    "id": "42086063539-1",
+    "folder": "2026-11-05_184026_run42086063539-1",
+    "date": "2026-11-05T18:40:26.212866890Z",
+    "trigger": "workflow_dispatch",
+    "scenario": "none",
+    "branch": "gates/performance",
+    "pr": null,
+    "sha": "d5df75b",
+    "runUrl": "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42086063539",
+    "verdict": "PASSED",
+    "reason": null,
+    "owner": null,
+    "classification": null,
+    "scope": "full",
+    "allure": true,
+    "performance": {
+      "passed": true,
+      "reason": "Performance within limits: p95 12.5 ms (limit 500 ms), errors 0%",
+      "p95Ms": 12.5,
+      "p99Ms": 15.1,
+      "avgMs": 6.3,
+      "errorRatePercent": 0.0,
+      "requestsPerSecond": 1556.5,
+      "requests": 46722,
+      "p95LimitMs": 500.0,
+      "errorRateLimitPercent": 1.0,
+      "load": "10 virtual users for 30s"
+    },
+    "stage": null,
+    "durationSec": 155,
+    "quarantineSize": 0,
+    "quarantinedThisRun": 0,
+    "gates": {
+      "smoke": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 5,
+        "passed": 5,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "contract": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 4,
+        "passed": 4,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "critical": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 9,
+        "passed": 9,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "regression": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 11,
+        "passed": 11,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 80.0,
+        "maxFlakeRate": 20.0
+      }
+    }
+  },
+  {
     "id": "42085604487-1",
     "folder": "2026-11-05_184007_run42085604487-1",
     "date": "2026-11-05T18:40:07.950084869Z",

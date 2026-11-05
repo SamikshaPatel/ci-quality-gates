@@ -1,0 +1,13 @@
+{
+  "passed" : true,
+  "reason" : "Performance within limits: p95 12.5 ms (limit 500 ms), errors 0%",
+  "p95Ms" : 12.5,
+  "p99Ms" : 15.1,
+  "avgMs" : 6.3,
+  "errorRatePercent" : 0.0,
+  "requestsPerSecond" : 1556.5,
+  "requests" : 46722,
+  "p95LimitMs" : 500.0,
+  "errorRateLimitPercent" : 1.0,
+  "load" : "10 virtual users for 30s"
+}
