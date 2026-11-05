@@ -1,0 +1,9 @@
+{
+  "scope" : "api",
+  "reason" : "Only API test code changed: smoke covers everything; UI critical and regression are not needed",
+  "modules" : [ "api-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ "api-tests/src/test/java/io/github/samikshapatel/qg/api/BookingRegressionTest.java" ],
+  "stabilityTests" : [ "api-tests|io.github.samikshapatel.qg.api.BookingRegressionTest" ],
+  "stabilityRuns" : 3
+}
