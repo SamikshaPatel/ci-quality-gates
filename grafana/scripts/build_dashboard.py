@@ -10,8 +10,13 @@ here, as code, makes them reviewable. Run it after changing a panel:
 import json
 import pathlib
 
-OUT = pathlib.Path(__file__).resolve().parents[1] / "dashboards" / "quality-gates.json"
-DS = {"type": "yesoreyeram-infinity-datasource", "uid": "${ds}"}
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+OUT = ROOT / "dashboards" / "quality-gates.json"            # provisioned: local Grafana and CI
+CLOUD = ROOT / "import" / "quality-gates.grafana-cloud.json"  # for Dashboards > Import in Grafana Cloud
+SITE = "https://samikshapatel.github.io/ci-quality-gates"
+# No template variables: Grafana's public (shared) dashboards do not support them.
+PROVISIONED_UID = "infinity-qg"
+DS = {"type": "yesoreyeram-infinity-datasource", "uid": PROVISIONED_UID}
 
 # Real runs only: demo scenarios fail on purpose and would skew every trend.
 REAL = "$filter($, function($v){ $v.scenario = 'none' })"
@@ -45,6 +50,15 @@ QUERIES = {
 }
 
 
+def or_empty(expr):
+    """An empty series is "no data yet", not an error: fresh forks have no performance runs."""
+    return f"( $x := {expr}; $exists($x) ? $x : [] )"
+
+
+for _k in ("noncritical", "perf", "duration", "recent"):
+    QUERIES[_k] = or_empty(QUERIES[_k])
+
+
 def col(selector, kind="number", text=None):
     return {"selector": selector, "text": text or selector, "type": kind}
 
@@ -52,7 +66,7 @@ def col(selector, kind="number", text=None):
 def target(query, file, columns):
     return {
         "refId": "A", "datasource": DS, "type": "json", "source": "url", "parser": "backend",
-        "format": "table", "url": "${site}/" + file, "url_options": {"method": "GET", "data": ""},
+        "format": "table", "url": f"{SITE}/{file}", "url_options": {"method": "GET", "data": ""},
         "root_selector": QUERIES[query], "columns": columns,
     }
 
@@ -168,17 +182,21 @@ dashboard = {
                "type": "link", "targetBlank": True},
               {"title": "CI contract", "url": "https://github.com/SamikshaPatel/ci-quality-gates/blob/main/CI_CONTRACT.md",
                "type": "link", "targetBlank": True}],
-    "templating": {"list": [
-        {"name": "ds", "label": "Data source", "type": "datasource", "query": "yesoreyeram-infinity-datasource",
-         "current": {}, "hide": 0},
-        {"name": "site", "label": "Run-history site", "type": "textbox", "hide": 2,
-         "query": "https://samikshapatel.github.io/ci-quality-gates",
-         "current": {"text": "https://samikshapatel.github.io/ci-quality-gates",
-                     "value": "https://samikshapatel.github.io/ci-quality-gates"}},
-    ]},
+    "templating": {"list": []},
     "panels": panels,
 }
 
+provisioned = json.dumps(dashboard, indent=2) + "\n"
 OUT.parent.mkdir(parents=True, exist_ok=True)
-OUT.write_text(json.dumps(dashboard, indent=2) + "\n")
-print(f"Wrote {OUT} with {len(panels)} panels")
+OUT.write_text(provisioned)
+
+# The import copy asks for the Infinity data source at import time, since its uid differs per stack.
+cloud = json.loads(provisioned.replace(f'"uid": "{PROVISIONED_UID}"', '"uid": "${DS_INFINITY}"'))
+cloud = {"__inputs": [{"name": "DS_INFINITY", "label": "Infinity", "type": "datasource",
+                       "pluginId": "yesoreyeram-infinity-datasource", "pluginName": "Infinity"}],
+         "__requires": [{"type": "datasource", "id": "yesoreyeram-infinity-datasource", "name": "Infinity", "version": "3.0.0"}],
+         **cloud}
+cloud.pop("id", None)
+CLOUD.parent.mkdir(parents=True, exist_ok=True)
+CLOUD.write_text(json.dumps(cloud, indent=2) + "\n")
+print(f"Wrote {OUT.name} and {CLOUD.name} with {len(panels)} panels")

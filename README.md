@@ -46,6 +46,7 @@ Beside these, the **Security** workflow runs CodeQL and dependency review on eve
 | Flakiness is measured across runs, not guessed from one retry | [Flakiness scores](https://samikshapatel.github.io/ci-quality-gates/flaky.html) ([ADR-0013](docs/adr/0013-flakiness-score.md)) |
 | Performance is gated, not just measured | k6 nightly and on Staging, judged against limits in config; p95 trend on the run history ([ADR-0014](docs/adr/0014-performance-gate.md)) |
 | Every run, newest first, with trends | [Run history site](https://samikshapatel.github.io/ci-quality-gates/) |
+| Pipeline health over time, where managers already look | [Grafana dashboard](grafana/), its queries checked against a real Grafana on every change ([ADR-0015](docs/adr/0015-grafana-dashboard.md)) |
 | Frozen results of each scenario | [docs/evidence/](docs/evidence) |
 | The contract is not tied to one CI tool | [Jenkinsfile](Jenkinsfile) calls the same scripts |
 
@@ -107,6 +108,7 @@ docs/                   test plan, ADRs, runbooks, evidence
 - **Nightly** (`nightly.yml`) runs the full gates on `main`, then reviews quarantine: quarantined tests run and build a green streak. A test is released after 7 clean nights, and one older than 14 days fails the run. Changes to `quarantine.json` arrive as a review PR, because `main` is protected even from the bot.
 - **Run history** (GitHub Pages, `gh-pages` branch): every run publishes its report to `runs/<date-time>_run<id>/`. The site lists all runs newest first, with filters for trigger, real or demo run, and result, plus trend charts of non-critical pass and flake rates and pipeline duration against the 10-minute budget. Demo runs are excluded from the trends. This plays the role a results server such as ReportPortal or Allure TestOps plays in larger teams.
 - **Promote** (`promote.yml`) runs on every merge to `main`: build once, then QA → Staging → Production, each verifying the artifact's SHA-256. QA and Staging run the full gates; Staging opens a Jira change record; Production waits for a required reviewer, then runs a post-deployment smoke check ([ADR-0011](docs/adr/0011-promotion-with-approvals.md)).
+- **Grafana dashboard** (`grafana.yml`) runs on changes under `grafana/`. It provisions a pinned Grafana with the dashboard and runs every panel's query, so a broken panel fails the PR ([grafana/](grafana/)).
 - **Release** (`release.yml`) runs on a `v*` tag. It runs the gates on the tagged commit and publishes a GitHub release with an evidence pack attached.
 
 ## Setup

@@ -18,11 +18,10 @@ grafana = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3000"
 password = os.environ.get("GRAFANA_ADMIN_PASSWORD", "local-only")
 auth = "Basic " + base64.b64encode(f"admin:{password}".encode()).decode()
 board = json.loads((pathlib.Path(__file__).resolve().parents[1] / "dashboards" / "quality-gates.json").read_text())
-site = next(v["query"] for v in board["templating"]["list"] if v["name"] == "site")
 
 failures = 0
 for panel in board["panels"]:
-    target = json.loads(json.dumps(panel["targets"][0]).replace("${site}", site).replace("${ds}", "infinity-qg"))
+    target = panel["targets"][0]
     body = json.dumps({"from": "now-90d", "to": "now", "queries": [target]}).encode()
     req = urllib.request.Request(f"{grafana}/api/ds/query", data=body, method="POST",
                                  headers={"Content-Type": "application/json", "Authorization": auth})

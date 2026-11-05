@@ -28,8 +28,8 @@ jobs:
       - name: Dashboard JSON matches its generator
         run: |
           python3 grafana/scripts/build_dashboard.py
-          git diff --exit-code -- grafana/dashboards \
-            || { echo "::error::grafana/dashboards is out of date. Run python3 grafana/scripts/build_dashboard.py and commit."; exit 1; }
+          git diff --exit-code -- grafana/dashboards grafana/import \
+            || { echo "::error::The dashboard JSON is out of date. Run python3 grafana/scripts/build_dashboard.py and commit."; exit 1; }
 
       - name: Start Grafana with the dashboard provisioned
         run: docker compose -f grafana/docker-compose.yml up -d --wait

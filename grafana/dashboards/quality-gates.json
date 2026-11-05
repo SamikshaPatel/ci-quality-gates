@@ -32,27 +32,7 @@
     }
   ],
   "templating": {
-    "list": [
-      {
-        "name": "ds",
-        "label": "Data source",
-        "type": "datasource",
-        "query": "yesoreyeram-infinity-datasource",
-        "current": {},
-        "hide": 0
-      },
-      {
-        "name": "site",
-        "label": "Run-history site",
-        "type": "textbox",
-        "hide": 2,
-        "query": "https://samikshapatel.github.io/ci-quality-gates",
-        "current": {
-          "text": "https://samikshapatel.github.io/ci-quality-gates",
-          "value": "https://samikshapatel.github.io/ci-quality-gates"
-        }
-      }
-    ]
+    "list": []
   },
   "panels": [
     {
@@ -62,7 +42,7 @@
       "description": "Verdict of the most recent real run (demo scenarios excluded).",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 0,
@@ -75,13 +55,13 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
@@ -149,7 +129,7 @@
       "description": "Share of the last 20 real runs that passed every gate.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 6,
@@ -162,13 +142,13 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
@@ -236,7 +216,7 @@
       "description": "Tests in quarantine after the latest real run. The cap is 5.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 12,
@@ -249,13 +229,13 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
@@ -318,7 +298,7 @@
       "description": "Tests whose flakiness score over recent main-branch runs is at or above the quarantine score (10%).",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 18,
@@ -331,13 +311,13 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/flakiness.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/flakiness.json",
           "url_options": {
             "method": "GET",
             "data": ""
@@ -399,7 +379,7 @@
       "description": "Pass rate must stay at or above its threshold; flake rate at or below its limit. Dashed lines are the limits from quality-gates.yml.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 0,
@@ -412,18 +392,18 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
           },
-          "root_selector": "$sort($filter($, function($v){ $v.scenario = 'none' })[gates.regression.executed > 0].{ 'date': $substring(date, 0, 19) & 'Z', 'pass': gates.regression.passRate, 'flake': gates.regression.flakeRate, 'passMin': gates.regression.passRateThreshold, 'flakeMax': gates.regression.maxFlakeRate }, function($a, $b){ $a.date > $b.date })",
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[gates.regression.executed > 0].{ 'date': $substring(date, 0, 19) & 'Z', 'pass': gates.regression.passRate, 'flake': gates.regression.flakeRate, 'passMin': gates.regression.passRateThreshold, 'flakeMax': gates.regression.maxFlakeRate }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
@@ -574,7 +554,7 @@
       "description": "k6 load test, nightly and on Staging. The gate fails when p95 crosses the dashed limit.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 12,
@@ -587,18 +567,18 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
           },
-          "root_selector": "$sort($filter($, function($v){ $v.scenario = 'none' })[$exists(performance.p95Ms)].{ 'date': $substring(date, 0, 19) & 'Z', 'p95': performance.p95Ms, 'p99': performance.p99Ms, 'limit': performance.p95LimitMs }, function($a, $b){ $a.date > $b.date })",
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[$exists(performance.p95Ms)].{ 'date': $substring(date, 0, 19) & 'Z', 'p95': performance.p95Ms, 'p99': performance.p99Ms, 'limit': performance.p95LimitMs }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
@@ -714,7 +694,7 @@
       "description": "Wall-clock time of each PR run. Runs above the dashed line break the runtime budget in the CI contract.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 0,
@@ -727,18 +707,18 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
           },
-          "root_selector": "$sort($filter($, function($v){ $v.scenario = 'none' })[trigger = 'pull_request'].{ 'date': $substring(date, 0, 19) & 'Z', 'minutes': $round(durationSec / 60, 1), 'budget': 10 }, function($a, $b){ $a.date > $b.date })",
+          "root_selector": "( $x := $sort($filter($, function($v){ $v.scenario = 'none' })[trigger = 'pull_request'].{ 'date': $substring(date, 0, 19) & 'Z', 'minutes': $round(durationSec / 60, 1), 'budget': 10 }, function($a, $b){ $a.date > $b.date }); $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
@@ -839,7 +819,7 @@
       "description": "Each test's failures and retry-passes over the recent main-branch window. Score = (failed + flaky) / runs.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 12,
@@ -852,13 +832,13 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/flakiness.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/flakiness.json",
           "url_options": {
             "method": "GET",
             "data": ""
@@ -961,7 +941,7 @@
       "description": "The last 15 real runs. Open a run for its report, Allure results and evidence.",
       "datasource": {
         "type": "yesoreyeram-infinity-datasource",
-        "uid": "${ds}"
+        "uid": "infinity-qg"
       },
       "gridPos": {
         "x": 0,
@@ -974,18 +954,18 @@
           "refId": "A",
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
-            "uid": "${ds}"
+            "uid": "infinity-qg"
           },
           "type": "json",
           "source": "url",
           "parser": "backend",
           "format": "table",
-          "url": "${site}/runs.json",
+          "url": "https://samikshapatel.github.io/ci-quality-gates/runs.json",
           "url_options": {
             "method": "GET",
             "data": ""
           },
-          "root_selector": "$filter($, function($v){ $v.scenario = 'none' })[[0..14]].{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }",
+          "root_selector": "( $x := $filter($, function($v){ $v.scenario = 'none' })[[0..14]].{ 'date': $substring(date, 0, 19) & 'Z', 'trigger': trigger, 'branch': branch, 'scope': scope, 'verdict': verdict, 'reason': reason, 'minutes': $round(durationSec / 60, 1), 'run': runUrl }; $exists($x) ? $x : [] )",
           "columns": [
             {
               "selector": "date",
