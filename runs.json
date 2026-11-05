@@ -1,5 +1,72 @@
 [
   {
+    "id": "42082475057-1",
+    "folder": "2026-11-05_182616_run42082475057-1",
+    "date": "2026-11-05T18:26:16.189411531Z",
+    "trigger": "pull_request",
+    "scenario": "none",
+    "branch": "gates/allure-report",
+    "pr": "13",
+    "sha": "7c13b39",
+    "runUrl": "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42082475057",
+    "verdict": "PASSED",
+    "reason": null,
+    "owner": null,
+    "classification": null,
+    "scope": "full",
+    "allure": true,
+    "stage": null,
+    "durationSec": 642,
+    "quarantineSize": 0,
+    "quarantinedThisRun": 0,
+    "gates": {
+      "smoke": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 5,
+        "passed": 5,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "contract": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 4,
+        "passed": 4,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "critical": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 9,
+        "passed": 9,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 100.0,
+        "maxFlakeRate": null
+      },
+      "regression": {
+        "verdict": "PASS",
+        "attempt": 1,
+        "executed": 11,
+        "passed": 11,
+        "flaky": 0,
+        "passRate": 100.0,
+        "flakeRate": 0.0,
+        "passRateThreshold": 80.0,
+        "maxFlakeRate": 20.0
+      }
+    }
+  },
+  {
     "id": "42066902314-1",
     "folder": "2026-11-05_164618_run42066902314-1",
     "date": "2026-11-05T16:46:18.151852849Z",

@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`.github/actions/setup-env/action.yml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ ".github/actions/setup-env/action.yml", ".github/dependabot.yml", ".github/workflows/nightly.yml", ".github/workflows/pr.yml", ".github/workflows/promote.yml", ".github/workflows/release.yml", ".github/workflows/security.yml", "README.md", "api-tests/pom.xml", "api-tests/src/test/java/io/github/samikshapatel/qg/api/BaseApiTest.java", "docs/adr/0012-allure-report.md", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/Main.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunHistory.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunReport.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/MainTest.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/RunReportTest.java", "pom.xml", "scripts/build-allure.sh", "scripts/publish-history.sh", "site/index.html", "site/run.html", "ui-tests/src/test/java/io/github/samikshapatel/qg/ui/BaseUiTest.java", "ui-tests/src/test/java/io/github/samikshapatel/qg/ui/FailureScreenshot.java" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
