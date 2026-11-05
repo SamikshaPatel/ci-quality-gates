@@ -107,8 +107,8 @@ docs/                   test plan, ADRs, runbooks, evidence
 ## Setup
 
 1. **Branch protection:** Settings → Rules → Rulesets → a branch ruleset on the default branch, active, with no bypass: restrict deletions, require a pull request (0 approvals for a solo repo, 1 or more in a team), require the **Smoke → Critical → Non-critical** status check with branches up to date, and block force pushes.
-1b. **Security checks in the ruleset:** in `protect-main`, under **Require status checks to pass**, add **Dependency review**; then tick **Require code scanning results**, add **CodeQL**, and set security alerts to **High or higher** and alerts to **Errors**. Turn on **Settings → Code security → Secret scanning** and **Push protection**.
-2. **Secrets and variables:** Settings → Secrets and variables → Actions. Only credentials are secrets. The Jira site and project key are plain variables, because GitHub masks every secret value in logs and reports, which would turn ticket links into `***-1`.
+2. **Security checks:** turn on **Settings → Code security → Dependency graph** (dependency review needs it). In `protect-main`, under **Require status checks to pass**, add **Dependency review**; then tick **Require code scanning results**, add **CodeQL**, and set security alerts to **High or higher** and alerts to **Errors**. On the same settings page, turn on **Secret scanning** and **Push protection**.
+3. **Secrets and variables:** Settings → Secrets and variables → Actions. Only credentials are secrets. The Jira site and project key are plain variables, because GitHub masks every secret value in logs and reports, which would turn ticket links into `***-1`.
 
    | Name | Kind | Purpose | Required |
    |---|---|---|---|
@@ -118,7 +118,7 @@ docs/                   test plan, ADRs, runbooks, evidence
    | `RB_USERNAME`, `RB_PASSWORD` | Restful-Booker auth | No: falls back to the public demo defaults |
    | `SAUCE_USERNAME`, `SAUCE_PASSWORD` | SauceDemo login | No: falls back to the public demo defaults |
 
-3. **Jenkins (optional):** create the four Jira credentials named in the `Jenkinsfile`, and point a Pipeline job at this repo.
+4. **Jenkins (optional):** create the four Jira credentials named in the `Jenkinsfile`, and point a Pipeline job at this repo.
 
 ## Run locally
 
