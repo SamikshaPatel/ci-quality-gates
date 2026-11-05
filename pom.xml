@@ -24,10 +24,10 @@
 
     <junit.version>5.11.4</junit.version>
     <restassured.version>5.5.0</restassured.version>
-    <playwright.version>1.49.0</playwright.version>
-    <jackson.version>2.18.2</jackson.version>
-    <snakeyaml.version>2.3</snakeyaml.version>
-    <allure.version>2.29.0</allure.version>
+    <playwright.version>1.64.0</playwright.version>
+    <jackson.version>2.22.4</jackson.version>
+    <snakeyaml.version>2.7</snakeyaml.version>
+    <allure.version>2.35.5</allure.version>
 
     <!-- Which tier this run is: smoke | critical | regression | all. Selects the report folder. -->
     <tier>all</tier>
@@ -95,7 +95,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.5.2</version>
+          <version>3.6.1</version>
           <configuration>
             <!-- One report folder per tier, so each gate reads only its own results. -->
             <reportsDirectory>${project.build.directory}/reports/${tier}</reportsDirectory>
@@ -110,17 +110,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.13.0</version>
+          <version>3.16.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.6.2</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>3.6.4</version>
         </plugin>
       </plugins>
     </pluginManagement>
