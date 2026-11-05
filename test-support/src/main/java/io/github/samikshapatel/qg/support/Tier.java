@@ -7,6 +7,7 @@ package io.github.samikshapatel.qg.support;
  */
 public final class Tier {
     public static final String SMOKE = "smoke";
+    public static final String CONTRACT = "contract";
     public static final String CRITICAL = "critical";
     public static final String REGRESSION = "regression";
     public static final String DEMO_FAULT = "demo-fault";

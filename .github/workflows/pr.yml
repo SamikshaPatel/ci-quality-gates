@@ -89,11 +89,15 @@ jobs:
         id: smoke
         run: scripts/run-gate.sh smoke
 
-      - name: "Gate 2 — Critical tier (100%, no retry credit)"
+      - name: "Gate 2 — Contract (API responses match their schemas, 100%)"
+        id: contract
+        run: scripts/run-gate.sh contract
+
+      - name: "Gate 3 — Critical tier (100%, no retry credit)"
         id: critical
         run: scripts/run-gate.sh critical
 
-      - name: "Gate 3 — Non-critical tier (pass rate and flake rate, quarantine)"
+      - name: "Gate 4 — Non-critical tier (pass rate and flake rate, quarantine)"
         id: regression
         run: scripts/run-regression.sh
 
@@ -144,6 +148,7 @@ jobs:
           mkdir -p evidence
           cp -r gate-results evidence/ 2>/dev/null || true
           cp quarantine.json evidence/ 2>/dev/null || true
+          cp -r gate-evaluator/target/site/jacoco evidence/coverage 2>/dev/null || true
           for m in api-tests ui-tests; do
             mkdir -p "evidence/$m"
             cp -r "$m/target/reports" "evidence/$m/" 2>/dev/null || true

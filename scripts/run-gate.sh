@@ -2,7 +2,7 @@
 # Runs one tier's tests and lets the gate evaluator judge them.
 # Used identically by GitHub Actions and Jenkins, so the contract does not depend on the CI tool.
 #
-#   scripts/run-gate.sh <smoke|critical|regression> [attempt]
+#   scripts/run-gate.sh <smoke|contract|critical|regression> [attempt]
 #
 # Exit codes come from the evaluator: 0 pass, 1 fail, 3 flaky tests quarantined (rerun the tier).
 # Maven never decides the verdict (-Dmaven.test.failure.ignore): the gate does.

@@ -18,11 +18,27 @@ runs:
       shell: bash
       run: docker compose -f docker-compose.ci.yml up -d --build --wait
 
-    - name: Build and unit-test the gate evaluator
+    - name: "Gate 0 — Evaluator unit tests and coverage (≥ 80% of lines)"
+      # The evaluator decides every merge, so it is tested first (ADR-0009). JaCoCo fails the build
+      # with the measured ratio and the minimum if coverage drops below the line in the POM.
       shell: bash
       run: |
         mvn -B -ntp install -pl test-support,gate-evaluator -am
         mvn -B -ntp test-compile -pl api-tests,ui-tests
+
+    - name: Coverage summary
+      if: always()
+      shell: bash
+      run: |
+        csv=gate-evaluator/target/site/jacoco/jacoco.csv
+        if [[ ! -f "$csv" ]]; then echo "No coverage report."; exit 0; fi
+        # Columns 8 and 9 are LINE_MISSED and LINE_COVERED, one row per class.
+        read -r missed covered < <(awk -F, 'NR>1 {m+=$8; c+=$9} END {print m, c}' "$csv")
+        pct=$(awk -v m="$missed" -v c="$covered" 'BEGIN {printf "%.1f", 100*c/(m+c)}')
+        min=$(sed -n 's:.*<coverage.line.minimum>\(.*\)</coverage.line.minimum>.*:\1:p' gate-evaluator/pom.xml)
+        line="Evaluator line coverage: ${pct}% (${covered} of $((missed+covered)) lines), minimum $(awk -v m="$min" 'BEGIN {printf "%.0f", 100*m}')%"
+        echo "[gate] ${line}"
+        echo "**Gate 0 —** ${line}" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Cache Playwright browsers
       uses: actions/cache@v4

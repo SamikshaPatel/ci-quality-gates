@@ -7,6 +7,11 @@ smoke:
   retries: 0              # smoke never retries — a retry would hide an outage
   blocking: true
 
+contract:
+  pass_rate: 100          # every API response must match its JSON schema (ADR-0008)
+  retries: 0              # a schema mismatch is never flaky
+  blocking: true
+
 critical:
   pass_rate: 100          # percent
   retries: 1              # we retry only to DETECT flakiness...
@@ -50,6 +55,7 @@ classification:
 owners:
   smoke_env: { owner: "DevOps", runbook: "docs/runbooks/smoke-failure.md" }
   smoke_code: { owner: "PR author", runbook: "docs/runbooks/smoke-failure.md" }
+  contract: { owner: "PR author (API provider)", runbook: "docs/runbooks/contract-failure.md" }
   critical: { owner: "PR author (QA reviews)", runbook: "docs/runbooks/critical-failure.md" }
   noncritical_failure: { owner: "PR author", runbook: "docs/runbooks/quality-gate-failure.md" }
   noncritical_flake: { owner: "QA, with the test's author", runbook: "docs/runbooks/quality-gate-failure.md" }

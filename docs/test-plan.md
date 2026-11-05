@@ -1,13 +1,14 @@
 # Test plan
 
-25 tests, written first and tagged from the plan. They cover two systems: 13 API tests on Restful-Booker and 12 UI tests on SauceDemo. A test is **critical** if a release that breaks it could not ship.
+29 tests, written first and tagged from the plan. They cover two systems: 17 API tests on Restful-Booker and 12 UI tests on SauceDemo. A test is **critical** if a release that breaks it could not ship.
 
 | Tier | API | UI | Total | Gate rule |
 |---|---|---|---|---|
 | Smoke | 3 | 2 | 5 | 100%, no retries |
+| Contract | 4 | — | 4 | 100%, no retries: responses match JSON schemas |
 | Critical | 5 | 4 | 9 | 100%, no retry credit |
 | Regression (non-critical) | 5 | 6 | 11 | ≥ 80% pass, ≤ 20% flaky |
-| **Total** | **13** | **12** | **25** | |
+| **Total** | **17** | **12** | **29** | |
 
 ## API — Restful-Booker (`api-tests`)
 
@@ -51,7 +52,18 @@
 - **Replayable:** every UI test saves a Playwright trace to `ui-tests/target/traces/`.
 - **Secrets:** credentials come from environment variables (GitHub secrets). The public demo defaults are used only when a secret is not set.
 
-## Deliberate fault tests (outside the 25)
+## API contract — Restful-Booker (`api-tests`)
+
+Each response is checked against a JSON schema in `api-tests/src/test/resources/schemas/`. The schemas hold what consumers rely on: required fields and their types. Extra fields are allowed, so the provider can add fields without breaking anyone.
+
+| # | Test | Schema | Checks |
+|---|---|---|---|
+| C1 | `BookingContractTest.authTokenMatchesSchema` | `auth-token.json` | Login returns a non-empty token, never a `reason` |
+| C2 | `BookingContractTest.bookingIdsMatchSchema` | `booking-ids.json` | The list is integer ids |
+| C3 | `BookingContractTest.createBookingResponseMatchesSchema` | `booking-created.json` | Create returns an id and the saved booking |
+| C4 | `BookingContractTest.getBookingMatchesSchema` | `booking.json` | Names, integer price, boolean deposit, ISO dates |
+
+## Deliberate fault tests (outside the 29)
 
 Eight fault tests in `api-tests/.../faults/DemoFaultTests.java` prove each failure path on demand. They are tagged `demo-fault`, excluded from every normal run, and enabled by a demo scenario ([ADR-0005](adr/0005-deliberate-fault-tests.md)).
 

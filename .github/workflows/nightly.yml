@@ -30,9 +30,11 @@ jobs:
 
       - name: "Gate 1 — Smoke"
         run: scripts/run-gate.sh smoke
-      - name: "Gate 2 — Critical tier"
+      - name: "Gate 2 — Contract"
+        run: scripts/run-gate.sh contract
+      - name: "Gate 3 — Critical tier"
         run: scripts/run-gate.sh critical
-      - name: "Gate 3 — Non-critical tier"
+      - name: "Gate 4 — Non-critical tier"
         run: scripts/run-regression.sh
 
       - name: Quarantine review (run quarantined tests, update green streaks)

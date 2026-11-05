@@ -19,7 +19,7 @@ import java.util.Optional;
  * Command line for the pipeline (GitHub Actions and Jenkins call the same commands).
  *
  * <pre>
- * evaluate --tier smoke|critical|regression --reports dir[,dir] [--attempt 1|2]
+ * evaluate --tier smoke|contract|critical|regression --reports dir[,dir] [--attempt 1|2]
  *          exit 0 = gate passed, 1 = gate failed, 3 = flaky tests quarantined: rerun the tier
  * report   writes gate-results/run-report.md and appends it to the GitHub job summary
  * review   nightly quarantine review: green streaks, releases, age alerts (exit 2 = overdue)
@@ -46,8 +46,8 @@ public final class Main {
         }
         Map<String, String> opts = options(Arrays.copyOfRange(args, 1, args.length));
         int code = switch (args[0]) {
-            case "evaluate" -> evaluate(opts);
-            case "report" -> report(opts);
+            case "evaluate" -> evaluate(opts, System.getenv());
+            case "report" -> report(opts, System.getenv());
             case "review" -> review(opts);
             case "retries" -> retries(opts);
             default -> {
@@ -58,7 +58,8 @@ public final class Main {
         System.exit(code);
     }
 
-    static int evaluate(Map<String, String> opts) throws IOException {
+    /** The environment is passed in, not read globally, so tests never reach real Jira or the job summary. */
+    static int evaluate(Map<String, String> opts, Map<String, String> env) throws IOException {
         String tier = required(opts, "tier");
         int attempt = Integer.parseInt(opts.getOrDefault("attempt", "1"));
         GateConfig config = GateConfig.load(Path.of(opts.getOrDefault("config", "quality-gates.yml")));
@@ -67,7 +68,6 @@ public final class Main {
         Files.createDirectories(out);
 
         List<TestResult> results = SurefireParser.parse(reportDirs(opts));
-        Map<String, String> env = System.getenv();
         String runUrl = runUrl(env);
         JiraClient jira = new JiraClient(env);
 
@@ -99,7 +99,7 @@ public final class Main {
         };
     }
 
-    static int report(Map<String, String> opts) throws IOException {
+    static int report(Map<String, String> opts, Map<String, String> env) throws IOException {
         Path out = Path.of(opts.getOrDefault("out", "gate-results"));
         Files.createDirectories(out);
         Map<String, GateResult> results = new LinkedHashMap<>();
@@ -114,15 +114,15 @@ public final class Main {
         if (Files.exists(reviewFile)) {
             review = Optional.of(MAPPER.readValue(reviewFile.toFile(), QuarantineReview.Summary.class));
         }
-        String markdown = new RunReport(System.getenv()).render(results, review);
+        String markdown = new RunReport(env).render(results, review);
         Files.writeString(out.resolve("run-report.md"), markdown);
 
         // One summary line per run for the run-history site (newest first, trends over time).
         int quarantineSize = QuarantineStore.load(Path.of(opts.getOrDefault("quarantine", "quarantine.json"))).size();
-        RunHistory.Entry entry = RunHistory.entry(results, quarantineSize, System.getenv(), java.time.Instant.now());
+        RunHistory.Entry entry = RunHistory.entry(results, quarantineSize, env, java.time.Instant.now());
         MAPPER.writeValue(out.resolve("history-entry.json").toFile(), entry);
 
-        String summary = System.getenv("GITHUB_STEP_SUMMARY");
+        String summary = env.get("GITHUB_STEP_SUMMARY");
         if (summary != null && !summary.isBlank()) {
             Files.writeString(Path.of(summary), markdown + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         }
