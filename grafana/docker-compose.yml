@@ -1,0 +1,23 @@
+# Local Grafana with the CI quality gates dashboard already provisioned.
+#   docker compose -f grafana/docker-compose.yml up -d
+#   open http://localhost:3000/d/ci-quality-gates   (anonymous, read-only)
+# Images and the plugin are pinned; Dependabot does not track these, so bump them by hand.
+services:
+  grafana:
+    image: grafana/grafana:12.4.10
+    ports:
+      - "3000:3000"
+    environment:
+      GF_PLUGINS_PREINSTALL_SYNC: yesoreyeram-infinity-datasource@3.7.4
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-local-only}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/quality-gates.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q ok"]
+      interval: 5s
+      retries: 30

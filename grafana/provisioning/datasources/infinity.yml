@@ -1,0 +1,12 @@
+# Infinity reads JSON over HTTP, so the dashboard queries the run-history site directly:
+# no database, no exporter. Only the GitHub Pages host may be queried.
+apiVersion: 1
+datasources:
+  - name: Infinity
+    type: yesoreyeram-infinity-datasource
+    uid: infinity-qg
+    isDefault: true
+    editable: false
+    jsonData:
+      allowedHosts:
+        - https://samikshapatel.github.io

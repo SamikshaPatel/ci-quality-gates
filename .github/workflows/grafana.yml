@@ -1,0 +1,56 @@
+name: Grafana dashboard
+
+# Proves the Grafana dashboard works against today's run history (ADR-0015):
+#   1. the committed dashboard JSON matches its generator, so every query is reviewable code;
+#   2. a pinned Grafana with the Infinity plugin provisions it;
+#   3. every panel's query runs through Grafana's query API and must return data without errors;
+#   4. a screenshot of the dashboard is kept as evidence.
+on:
+  pull_request:
+    paths:
+      - "grafana/**"
+      - ".github/workflows/grafana.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dashboard:
+    name: Dashboard queries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GRAFANA_ADMIN_PASSWORD: ci-only-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Dashboard JSON matches its generator
+        run: |
+          python3 grafana/scripts/build_dashboard.py
+          git diff --exit-code -- grafana/dashboards \
+            || { echo "::error::grafana/dashboards is out of date. Run python3 grafana/scripts/build_dashboard.py and commit."; exit 1; }
+
+      - name: Start Grafana with the dashboard provisioned
+        run: docker compose -f grafana/docker-compose.yml up -d --wait
+
+      - name: Run every panel query
+        run: python3 grafana/scripts/verify_dashboard.py http://localhost:3000
+
+      - name: Screenshot the dashboard
+        if: always()
+        run: |
+          pip install -q playwright==1.49.0
+          python3 -m playwright install --with-deps chromium > /dev/null
+          python3 grafana/scripts/screenshot.py http://localhost:3000 grafana-dashboard.png
+
+      - name: Grafana log on failure
+        if: failure()
+        run: docker compose -f grafana/docker-compose.yml logs --tail 80 grafana
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: grafana-dashboard
+          path: grafana-dashboard.png
+          if-no-files-found: ignore
