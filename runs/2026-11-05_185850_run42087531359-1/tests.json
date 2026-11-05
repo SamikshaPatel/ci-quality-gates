@@ -1,0 +1,117 @@
+[ {
+  "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#healthCheckReturns201",
+  "tier" : "smoke",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#authReturnsToken",
+  "tier" : "smoke",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.ApiSmokeTest#bookingListReturnsIds",
+  "tier" : "smoke",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.UiSmokeTest#loginPageLoads",
+  "tier" : "smoke",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.UiSmokeTest#standardUserReachesInventory",
+  "tier" : "smoke",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingContractTest#bookingIdsMatchSchema",
+  "tier" : "contract",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingContractTest#createBookingResponseMatchesSchema",
+  "tier" : "contract",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingContractTest#getBookingMatchesSchema",
+  "tier" : "contract",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingContractTest#authTokenMatchesSchema",
+  "tier" : "contract",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingCriticalTest#deleteBookingWithTokenRemovesIt",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingCriticalTest#updateBookingWithTokenSucceeds",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingCriticalTest#createBookingReturnsId",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingCriticalTest#updateWithoutTokenIsRejected",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingCriticalTest#getBookingReturnsCreatedData",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.CheckoutCriticalTest#completeCheckoutShowsConfirmation",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.CheckoutCriticalTest#lockedOutUserSeesError",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.CheckoutCriticalTest#addToCartUpdatesBadge",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.CheckoutCriticalTest#logoutReturnsToLogin",
+  "tier" : "critical",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingRegressionTest#filterByFirstnameFindsBooking",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingRegressionTest#createWithMissingFieldsIsRejected",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingRegressionTest#filterByCheckinExcludesEarlierBookings",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingRegressionTest#getUnknownBookingReturns404",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.api.BookingRegressionTest#partialUpdateChangesOnlyGivenFields",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#productDetailShowsPrice",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#sortByPriceLowToHigh",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#cartKeepsItemsAcrossPages",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#removeFromCartClearsBadge",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#sortByNameZtoA",
+  "tier" : "regression",
+  "status" : "PASSED"
+}, {
+  "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#checkoutRequiresPostalCode",
+  "tier" : "regression",
+  "status" : "PASSED"
+} ]
