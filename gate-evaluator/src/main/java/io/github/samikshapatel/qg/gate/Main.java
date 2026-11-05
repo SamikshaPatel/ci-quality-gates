@@ -26,6 +26,7 @@ import java.util.Optional;
  * retries  prints the configured retry count for --tier
  * plan     impact analysis: --changed file-list | --full "reason"; writes test-plan.json, prints KEY=VALUE for $GITHUB_ENV
  *          evaluate --not-selected "reason" records a gate that this change did not need
+ * performance        applies the performance limits to k6's summary: --summary k6-summary.json (exit 1 = breach)
  * flakiness          scores every test over recent main-branch runs: --runs runs-dir --out flakiness.json
  * quarantine-by-score  nightly: quarantines tests at or over the score limit: --flakiness file
  * allure-categories  writes Allure's categories.json (ENV, CODE, flaky) from the gate config: --file
@@ -58,6 +59,8 @@ public final class Main {
             case "plan" -> plan(opts);
             case "allure-categories" -> allureCategories(opts);
             case "flakiness" -> flakiness(opts);
+            case "performance" -> performance(opts);
+            case "performance-load" -> performanceLoad(opts);
             case "quarantine-by-score" -> quarantineByScore(opts, System.getenv());
             default -> {
                 System.err.println("Unknown command: " + args[0]);
@@ -140,6 +143,9 @@ public final class Main {
         Path stabilityFile = out.resolve("stability.md");
         String stability = Files.exists(stabilityFile) ? Files.readString(stabilityFile) : null;
         boolean stabilityFailed = Files.exists(out.resolve("stability-failed"));
+        Path performanceFile = out.resolve("performance.json");
+        Performance.Result performance = Files.exists(performanceFile)
+                ? MAPPER.readValue(performanceFile.toFile(), Performance.Result.class) : null;
 
         List<Flakiness.Outcome> outcomes = Flakiness.mergeTiers(out);
         MAPPER.writeValue(out.resolve("tests.json").toFile(), outcomes);
@@ -154,11 +160,19 @@ public final class Main {
             entry.reason = "Stability check failed: a new or changed test did not pass every run";
             entry.owner = "PR author";
         }
+        entry.performance = performance;
+        if (performance != null && !performance.passed && !"FAILED".equals(entry.verdict)) {
+            entry.verdict = "FAILED";
+            entry.reason = performance.reason;
+            entry.owner = "PR author, with DevOps";
+        }
         MAPPER.writeValue(out.resolve("history-entry.json").toFile(), entry);
 
         String markdown = new RunReport(env)
                 .withSelection(plan.map(ImpactPlanner.Plan::note).orElse(null))
                 .withStability(stability, stabilityFailed)
+                .withPerformance(performance == null ? null : Performance.markdown(performance),
+                        performance != null && !performance.passed)
                 .withAllure(entry.allure ? "runs/" + entry.folder + "/allure/" : null)
                 .withSection(historySection(out, outcomes))
                 .withSection(scoreQuarantineSection(out))
@@ -208,6 +222,30 @@ public final class Main {
             md.append("- ⚠️ `").append(RunReport.shortId(id)).append("` qualifies, but quarantine is at its cap\n");
         }
         return md.toString();
+    }
+
+    static int performance(Map<String, String> opts) throws IOException {
+        Map<String, Object> root;
+        try (var reader = Files.newBufferedReader(Path.of(opts.getOrDefault("config", "quality-gates.yml")))) {
+            root = new org.yaml.snakeyaml.Yaml().load(reader);
+        }
+        Path out = Path.of(opts.getOrDefault("out", "gate-results"));
+        Files.createDirectories(out);
+        Performance.Result result = Performance.evaluate(Path.of(required(opts, "summary")), Performance.limits(root));
+        MAPPER.writeValue(out.resolve("performance.json").toFile(), result);
+        System.out.println("[gate] " + result.reason);
+        return result.passed ? PASS : FAIL;
+    }
+
+    /** Prints KEY=VALUE load settings for scripts/run-performance.sh. */
+    static int performanceLoad(Map<String, String> opts) throws IOException {
+        Map<String, Object> root;
+        try (var reader = Files.newBufferedReader(Path.of(opts.getOrDefault("config", "quality-gates.yml")))) {
+            root = new org.yaml.snakeyaml.Yaml().load(reader);
+        }
+        Performance.Limits limits = Performance.limits(root);
+        System.out.print("VUS=" + limits.vus() + "\nDURATION=" + limits.duration() + "\n");
+        return PASS;
     }
 
     static int flakiness(Map<String, String> opts) throws IOException {

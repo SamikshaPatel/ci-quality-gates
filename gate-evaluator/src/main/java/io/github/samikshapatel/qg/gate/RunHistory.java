@@ -45,6 +45,8 @@ public final class RunHistory {
         public String scope;
         /** True when this run's Allure report is published under runs/&lt;folder&gt;/allure/. */
         public boolean allure;
+        /** Performance gate result, on runs that ran it (nightly, Staging promotion). */
+        public Performance.Result performance;
         /** Promotion stage (qa, staging) when the run verified a deployment. */
         public String stage;
         public Long durationSec;

@@ -45,6 +45,13 @@ quarantine:
     - "*Auth*"
     - "*Checkout*"
 
+performance:
+  # Performance gate (ADR-0014): k6 load test on the booking API, nightly and on Staging promotion.
+  vus: 10                 # concurrent virtual users
+  duration: 30s
+  p95_ms: 500             # 95% of requests must finish within this
+  error_rate_percent: 1   # at most this share of requests may fail
+
 flakiness:
   # Flakiness score (ADR-0013): share of recent main-branch runs in which a test failed or
   # needed a retry. PR runs, demo scenarios and environment outages never count.

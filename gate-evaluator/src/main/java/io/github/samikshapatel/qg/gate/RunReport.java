@@ -22,6 +22,8 @@ public class RunReport {
     private String stabilityMarkdown;
     private boolean stabilityFailed;
     private String allurePath;
+    private String performanceMarkdown;
+    private boolean performanceFailed;
     private final java.util.List<String> sections = new java.util.ArrayList<>();
 
     public RunReport(Map<String, String> env) {
@@ -39,6 +41,13 @@ public class RunReport {
         if (markdown != null && !markdown.isBlank()) {
             sections.add(markdown.strip());
         }
+        return this;
+    }
+
+    /** Result of the performance gate (nightly and Staging); a breach blocks like a gate. */
+    public RunReport withPerformance(String markdown, boolean failed) {
+        this.performanceMarkdown = markdown;
+        this.performanceFailed = failed;
         return this;
     }
 
@@ -73,14 +82,14 @@ public class RunReport {
                 .filter(r -> r != null && r.verdict == GateResult.Verdict.FAIL)
                 .findFirst();
         boolean allRan = ORDER.stream().allMatch(t -> results.containsKey(t) && results.get(t).passed());
-        boolean passed = firstFailure.isEmpty() && allRan && !stabilityFailed;
+        boolean passed = firstFailure.isEmpty() && allRan && !stabilityFailed && !performanceFailed;
 
         md.append(MARKER).append('\n');
         md.append("## Run report\n\n");
         md.append(context()).append("\n\n");
         if (passed) {
             md.append("**Result: ✅ PASSED — merge allowed**\n\n");
-        } else if (firstFailure.isPresent() || stabilityFailed) {
+        } else if (firstFailure.isPresent() || stabilityFailed || performanceFailed) {
             md.append("**Result: ❌ FAILED — merge blocked**\n\n");
         } else {
             md.append("**Result: ⚠️ INCOMPLETE — not every gate reported; merge blocked**\n\n");
@@ -126,6 +135,9 @@ public class RunReport {
 
         if (stabilityMarkdown != null && !stabilityMarkdown.isBlank()) {
             md.append(stabilityMarkdown.strip()).append("\n\n");
+        }
+        if (performanceMarkdown != null) {
+            md.append(performanceMarkdown.strip()).append("\n\n");
         }
         for (String section : sections) {
             md.append(section).append("\n\n");

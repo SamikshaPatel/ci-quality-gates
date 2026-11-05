@@ -127,6 +127,11 @@ jobs:
         id: regression
         run: scripts/run-regression.sh
 
+      - name: "Gate 5 — Performance (Staging promotion only)"
+        # Load testing belongs to a production-like stage, not every PR (ADR-0014).
+        if: success() && inputs.stage == 'staging'
+        run: scripts/run-performance.sh
+
       - name: "Stability — new or changed tests pass every run"
         if: success() && env.STABILITY_TESTS != ''
         run: scripts/stability-check.sh

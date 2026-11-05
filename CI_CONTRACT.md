@@ -23,6 +23,10 @@
 - A **quarantined** test is skipped by the PR gates, so it no longer affects the gate result. It keeps running nightly.
 - The 80% baseline tightens as real run data comes in. Each change is recorded in `threshold_history` in `quality-gates.yml`.
 
+## Performance
+
+Nightly and on the Staging promotion, a k6 load test (10 virtual users, 30 seconds) must keep the booking API's **p95 response time under 500 ms** and its **error rate at or below 1%** ([ADR-0014](docs/adr/0014-performance-gate.md)). A breach fails the run and stops the promotion. It never runs on PRs.
+
 ## Which tests a PR runs
 
 A PR runs only the gates its changes can affect ([ADR-0010](docs/adr/0010-impact-based-selection.md)); the rules live in the `impact` section of `quality-gates.yml`.
@@ -51,6 +55,7 @@ The gate evaluator tags each failure **ENV** (timeout, 5xx, unreachable host) or
 | Non-critical, pass rate below threshold | Build failed, PR blocked | PR author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 | Non-critical, flake rate over limit | Flaky tests quarantined, ticket opened per test, gate reruns | QA, with the test's author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 | Stability check, a new or changed test failed a run | Build failed, PR blocked | PR author | [ADR-0010](docs/adr/0010-impact-based-selection.md) |
+| Performance, p95 or error rate over the limit | Run failed; on Staging, the promotion stops | PR author, with DevOps | [performance-failure](docs/runbooks/performance-failure.md) |
 | Quarantine cap would be exceeded | Quarantine refused, build failed, PR blocked | QA lead | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 
 ## Quarantine rules

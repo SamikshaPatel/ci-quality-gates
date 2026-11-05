@@ -36,6 +36,8 @@ jobs:
         run: scripts/run-gate.sh critical
       - name: "Gate 4 — Non-critical tier"
         run: scripts/run-regression.sh
+      - name: "Gate 5 — Performance (p95 and error rate under load)"
+        run: scripts/run-performance.sh
 
       - name: Quarantine review (run quarantined tests, update green streaks)
         if: always() && hashFiles('quarantine.json') != ''
