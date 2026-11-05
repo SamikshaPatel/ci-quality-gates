@@ -1,0 +1,9 @@
+{
+  "scope" : "docs",
+  "reason" : "Documentation only: no test gates needed (evaluator tests and security checks still run)",
+  "modules" : [ ],
+  "selectedTiers" : [ ],
+  "changedFiles" : [ "docs/evidence/demo-prs/scope-docs-only.md" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
