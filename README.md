@@ -29,7 +29,7 @@ flowchart TD
 | Critical tier | 100%, a pass on retry still fails | 1, to detect flakiness | PR blocked, never quarantined |
 | Non-critical tier | ≥ 80% pass and ≤ 20% flaky | 1 | Flake breach: quarantine, ticket, rerun. Otherwise the PR is blocked |
 
-Beside these, the **Security** workflow runs CodeQL and dependency review on every PR, and the evaluator must keep 80% line coverage before any test gate runs. The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.md)**. Every number lives in **[quality-gates.yml](quality-gates.yml)**.
+Beside these, the **Security** workflow runs CodeQL and dependency review on every PR, and the evaluator must keep 80% line coverage before any test gate runs. On a pull request, **impact analysis** runs only the gates the change can affect (a docs-only PR runs no test gates; an API-only PR skips UI regression), and new or changed tests must pass 3 runs in a row. The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.md)**. Every number lives in **[quality-gates.yml](quality-gates.yml)**.
 
 ## Proof
 
