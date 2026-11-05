@@ -43,6 +43,8 @@ public final class RunHistory {
         public String classification;
         /** Impact-analysis scope: full, api, ui or docs. */
         public String scope;
+        /** True when this run's Allure report is published under runs/&lt;folder&gt;/allure/. */
+        public boolean allure;
         /** Promotion stage (qa, staging) when the run verified a deployment. */
         public String stage;
         public Long durationSec;

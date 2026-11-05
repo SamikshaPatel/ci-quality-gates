@@ -228,8 +228,14 @@ function renderTable() {
     const scopeText = r.scope && r.scope !== 'full' ? `real · ${r.scope} only` : 'real run';
     const scenario = isReal(r) ? el('span', { className: 'tag', text: scopeText, title: 'Impact-analysis scope' })
                                : el('span', { className: 'tag demo', text: r.scenario });
-    const link = el('a', { text: 'Report →' });
+    const link = el('a', { text: 'Report' });
     link.href = href;
+    const links = el('td', {}, link);
+    if (r.allure) {
+      const allure = el('a', { text: 'Allure' });
+      allure.href = `runs/${encodeURIComponent(r.folder)}/allure/`;
+      links.append(' · ', allure);
+    }
     const tr = el('tr', {},
       when,
       el('td', { text: triggerLabel(r) }),
@@ -242,7 +248,7 @@ function renderTable() {
       el('td', {}, gateChip(r.gates && r.gates.regression)),
       el('td', {}, resultChip(r)),
       el('td', { className: 'mono', text: fmtDuration(r.durationSec) }),
-      el('td', {}, link));
+      links);
     tr.addEventListener('click', e => { if (e.target.tagName !== 'A') location.href = href; });
     body.append(tr);
   });

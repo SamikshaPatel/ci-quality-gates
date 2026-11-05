@@ -49,6 +49,17 @@ jobs:
           java -jar gate-evaluator/target/gate-evaluator.jar review \
             --reports api-tests/target/reports/quarantine,ui-tests/target/reports/quarantine
 
+      - name: Cache the Allure command line
+        if: always()
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/allure
+          key: allure-2.46.1
+
+      - name: Allure report (every test, with trends)
+        if: always()
+        run: scripts/build-allure.sh || echo "::warning::The Allure report could not be built; the gates are unaffected."
+
       - name: Run report
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report

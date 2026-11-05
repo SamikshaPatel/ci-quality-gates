@@ -1,6 +1,7 @@
 package io.github.samikshapatel.qg.api;
 
 import io.github.samikshapatel.qg.support.Config;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.config.HttpClientConfig;
@@ -34,6 +35,7 @@ abstract class BaseApiTest {
                 // Restful-Booker matches Accept exactly; RestAssured's ContentType.JSON sends a list and gets 418.
                 .setAccept("application/json")
                 .setConfig(config)
+                .addFilter(new AllureRestAssured())
                 .build();
     }
 

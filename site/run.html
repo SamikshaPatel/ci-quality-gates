@@ -47,6 +47,7 @@ if (!/^[\w.-]+$/.test(folder)) {
       add(meta, entry.scenario && entry.scenario !== 'none' ? `Demo scenario: ${entry.scenario}` : 'Real run');
       if (entry.branch) add(meta, `Branch ${entry.branch}`);
       if (entry.runUrl) add(meta, 'Open in GitHub Actions', entry.runUrl);
+      if (entry.allure) add(meta, 'Allure report', base + 'allure/');
       add(meta, 'Raw result (JSON)', base + 'history-entry.json');
     }
     if (md === null) {

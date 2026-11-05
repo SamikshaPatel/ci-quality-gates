@@ -38,6 +38,12 @@
       <artifactId>allure-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!-- Every request and response is attached to the test in the Allure report -->
+      <groupId>io.qameta.allure</groupId>
+      <artifactId>allure-rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

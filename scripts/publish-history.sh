@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Publishes this run to the run-history site on the gh-pages branch (GitHub Pages):
-#   runs/<yyyy-mm-dd_HHMMSS>_run<id>/   run-report.md, gate results, failure file
+#   runs/<yyyy-mm-dd_HHMMSS>_run<id>/   run-report.md, gate results, failure file, allure/ report
+#   allure-history/                     Allure trend data, carried into the next run's report
 #   runs.json                           every run's summary, newest first (rebuilt each publish)
 #   index.html, run.html                the site itself, copied from site/ on main
 #
@@ -33,6 +34,20 @@ for attempt in 1 2 3 4 5; do
   mkdir -p "$work/runs/$folder"
   cp gate-results/*.json gate-results/run-report.md "$work/runs/$folder/"
   cp gate-results/quality-gate-failure.txt "$work/runs/$folder/" 2>/dev/null || true
+  if [[ -f gate-results/allure/index.html ]]; then
+    mkdir -p "$work/runs/$folder/allure"
+    cp gate-results/allure/index.html "$work/runs/$folder/allure/index.html"
+  fi
+  if [[ -d gate-results/allure-history ]]; then
+    rm -rf "$work/allure-history"
+    cp -r gate-results/allure-history "$work/allure-history"
+  fi
+  # Allure reports are kept for the newest runs only; older runs keep their run report and entry.
+  ls -1d "$work"/runs/*/allure 2>/dev/null | sort -r | tail -n +$(( ${ALLURE_KEEP:-30} + 1 )) | while read -r old; do
+    rm -rf "$old"
+    entry_file="$(dirname "$old")/history-entry.json"
+    jq '.allure = false' "$entry_file" > "$entry_file.tmp" && mv "$entry_file.tmp" "$entry_file"
+  done || true
   cp site/* "$work/"
   touch "$work/.nojekyll"
 
