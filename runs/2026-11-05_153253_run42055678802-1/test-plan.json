@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`.github/workflows/pr.yml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ ".github/workflows/pr.yml", "CI_CONTRACT.md", "README.md", "docs/adr/0010-impact-based-selection.md", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/GateResult.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/ImpactPlanner.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/Main.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunHistory.java", "gate-evaluator/src/main/java/io/github/samikshapatel/qg/gate/RunReport.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/ImpactPlannerTest.java", "gate-evaluator/src/test/java/io/github/samikshapatel/qg/gate/MainTest.java", "quality-gates.yml", "scripts/run-gate.sh", "scripts/stability-check.sh", "site/index.html" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
