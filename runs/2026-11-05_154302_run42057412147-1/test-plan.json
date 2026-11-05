@@ -1,0 +1,9 @@
+{
+  "scope" : "ui",
+  "reason" : "Only UI test code changed: smoke covers everything; contract and API critical and regression are not needed",
+  "modules" : [ "ui-tests" ],
+  "selectedTiers" : [ "smoke", "critical", "regression" ],
+  "changedFiles" : [ "ui-tests/src/test/java/io/github/samikshapatel/qg/ui/StoreRegressionTest.java" ],
+  "stabilityTests" : [ "ui-tests|io.github.samikshapatel.qg.ui.StoreRegressionTest" ],
+  "stabilityRuns" : 3
+}
