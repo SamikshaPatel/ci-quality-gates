@@ -9,7 +9,8 @@ import java.util.List;
  */
 public class GateResult {
 
-    public enum Verdict { PASS, FAIL, QUARANTINE_RERUN }
+    /** NOT_SELECTED: impact analysis decided this change cannot affect the gate's tests (ADR-0010). */
+    public enum Verdict { PASS, FAIL, QUARANTINE_RERUN, NOT_SELECTED }
 
     public String tier;
     public Verdict verdict;
@@ -41,11 +42,24 @@ public class GateResult {
     public record Failure(String id, String status, String classification, String message) {
     }
 
+    /** A gate that was not needed for this change does not block it. */
     public boolean passed() {
-        return verdict == Verdict.PASS;
+        return verdict == Verdict.PASS || verdict == Verdict.NOT_SELECTED;
+    }
+
+    public static GateResult notSelected(String tier, String reason) {
+        GateResult r = new GateResult();
+        r.tier = tier;
+        r.verdict = Verdict.NOT_SELECTED;
+        r.reason = reason;
+        r.action = "Not run: impact analysis found nothing in this change that these tests cover.";
+        return r;
     }
 
     public String measuredText() {
+        if (verdict == Verdict.NOT_SELECTED) {
+            return "not needed for this change";
+        }
         String base = effectivePassed + "/" + executed + " passed (" + pct(passRate) + ")";
         if (maxFlakeRate != null) {
             base += ", flaky " + flaky + " (" + pct(flakeRate) + ")";
@@ -54,6 +68,9 @@ public class GateResult {
     }
 
     public String thresholdText() {
+        if (verdict == Verdict.NOT_SELECTED) {
+            return "—";
+        }
         String base = "≥ " + pct(passRateThreshold) + " pass";
         if (maxFlakeRate != null) {
             base += ", ≤ " + pct(maxFlakeRate) + " flaky";

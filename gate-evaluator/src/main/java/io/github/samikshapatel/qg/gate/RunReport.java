@@ -18,9 +18,25 @@ public class RunReport {
     static final List<String> ORDER = List.of("smoke", "contract", "critical", "regression");
 
     private final Map<String, String> env;
+    private String selectionNote;
+    private String stabilityMarkdown;
+    private boolean stabilityFailed;
 
     public RunReport(Map<String, String> env) {
         this.env = env;
+    }
+
+    /** Which tests this change needed (impact analysis), shown under the result line. */
+    public RunReport withSelection(String note) {
+        this.selectionNote = note;
+        return this;
+    }
+
+    /** Result of the changed-tests stability check; a failure blocks the merge like a gate. */
+    public RunReport withStability(String markdown, boolean failed) {
+        this.stabilityMarkdown = markdown;
+        this.stabilityFailed = failed;
+        return this;
     }
 
     /** PASSED only when every gate ran and passed; FAILED when any gate failed; otherwise INCOMPLETE. */
@@ -41,17 +57,20 @@ public class RunReport {
                 .filter(r -> r != null && r.verdict == GateResult.Verdict.FAIL)
                 .findFirst();
         boolean allRan = ORDER.stream().allMatch(t -> results.containsKey(t) && results.get(t).passed());
-        boolean passed = firstFailure.isEmpty() && allRan;
+        boolean passed = firstFailure.isEmpty() && allRan && !stabilityFailed;
 
         md.append(MARKER).append('\n');
         md.append("## Run report\n\n");
         md.append(context()).append("\n\n");
         if (passed) {
             md.append("**Result: ✅ PASSED — merge allowed**\n\n");
-        } else if (firstFailure.isPresent()) {
+        } else if (firstFailure.isPresent() || stabilityFailed) {
             md.append("**Result: ❌ FAILED — merge blocked**\n\n");
         } else {
             md.append("**Result: ⚠️ INCOMPLETE — not every gate reported; merge blocked**\n\n");
+        }
+        if (selectionNote != null && !selectionNote.isBlank()) {
+            md.append("**Test selection:** ").append(selectionNote).append("\n\n");
         }
 
         md.append("| Gate | Result | Measured | Threshold |\n|---|---|---|---|\n");
@@ -68,6 +87,7 @@ public class RunReport {
                 case PASS -> r.attempt > 1 ? "✅ PASS after quarantine" : "✅ PASS";
                 case FAIL -> "❌ FAIL";
                 case QUARANTINE_RERUN -> "🔁 QUARANTINED, rerunning";
+                case NOT_SELECTED -> "⏭️ NOT SELECTED";
             };
             md.append("| ").append(name).append(" | ").append(verdict).append(" | ")
                     .append(r.measuredText()).append(" | ").append(r.thresholdText()).append(" |\n");
@@ -87,6 +107,10 @@ public class RunReport {
         }
 
         review.ifPresent(s -> appendReview(md, s));
+
+        if (stabilityMarkdown != null && !stabilityMarkdown.isBlank()) {
+            md.append(stabilityMarkdown.strip()).append("\n\n");
+        }
 
         md.append("**Evidence:** ");
         md.append(link("Run and artifacts (Allure results, Playwright traces, Surefire XML)", runUrl()));

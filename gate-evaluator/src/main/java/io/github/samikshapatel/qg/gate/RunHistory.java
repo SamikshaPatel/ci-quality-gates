@@ -41,6 +41,8 @@ public final class RunHistory {
         public String reason;
         public String owner;
         public String classification;
+        /** Impact-analysis scope: full, api, ui or docs. */
+        public String scope;
         public Long durationSec;
         public int quarantineSize;
         public int quarantinedThisRun;

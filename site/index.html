@@ -113,6 +113,7 @@ const ago = iso => {
 
 function gateChip(g, notYetAGate) {
   if (!g && notYetAGate) return el('span', { className: 'chip skip', text: 'n/a', title: 'This gate did not exist yet' });
+  if (g && g.verdict === 'NOT_SELECTED') return el('span', { className: 'chip skip', text: 'not needed', title: 'Impact analysis: this change cannot affect these tests' });
   if (!g) return el('span', { className: 'chip skip', text: '— skipped' });
   if (g.verdict === 'PASS' && g.attempt > 1) {
     return el('span', { className: 'chip warn', text: `✓ ${g.passRate}%`, title: 'Passed after quarantining flaky tests' });
@@ -224,7 +225,8 @@ function renderTable() {
     const href = `run.html?run=${encodeURIComponent(r.folder)}`;
     const [day, time] = fmtWhen(r.date);
     const when = el('td', { className: 'when' }, day, el('small', { text: time }));
-    const scenario = isReal(r) ? el('span', { className: 'tag', text: 'real run' })
+    const scopeText = r.scope && r.scope !== 'full' ? `real · ${r.scope} only` : 'real run';
+    const scenario = isReal(r) ? el('span', { className: 'tag', text: scopeText, title: 'Impact-analysis scope' })
                                : el('span', { className: 'tag demo', text: r.scenario });
     const link = el('a', { text: 'Report →' });
     link.href = href;
