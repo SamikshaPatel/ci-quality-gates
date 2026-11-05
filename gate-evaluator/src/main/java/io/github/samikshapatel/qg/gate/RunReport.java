@@ -21,6 +21,7 @@ public class RunReport {
     private String selectionNote;
     private String stabilityMarkdown;
     private boolean stabilityFailed;
+    private String allurePath;
 
     public RunReport(Map<String, String> env) {
         this.env = env;
@@ -29,6 +30,12 @@ public class RunReport {
     /** Which tests this change needed (impact analysis), shown under the result line. */
     public RunReport withSelection(String note) {
         this.selectionNote = note;
+        return this;
+    }
+
+    /** Path of this run's Allure report on the history site, relative to its root. */
+    public RunReport withAllure(String path) {
+        this.allurePath = path;
         return this;
     }
 
@@ -117,6 +124,9 @@ public class RunReport {
         md.append(" · ").append(link("CI contract", blob("CI_CONTRACT.md")));
         md.append(" · ").append(link("Gate config", blob("quality-gates.yml")));
         String history = historyUrl();
+        if (history != null && allurePath != null) {
+            md.append(" · ").append(link("Allure report (every test, steps, screenshots)", history + allurePath));
+        }
         if (history != null) {
             md.append(" · ").append(link("Run history", history));
         }

@@ -107,6 +107,15 @@ class RunReportTest {
     }
 
     @Test
+    void reportLinksToAllureWhenPublished() {
+        Map<String, GateResult> results = new LinkedHashMap<>();
+        results.put("smoke", smokeEnvFailure());
+        String md = new RunReport(env).withAllure("runs/2026-11-05_120000_run42-1/allure/").render(results, Optional.empty());
+        assertTrue(md.contains("(https://samikshapatel.github.io/ci-quality-gates/runs/2026-11-05_120000_run42-1/allure/)"), md);
+        assertFalse(new RunReport(env).render(results, Optional.empty()).contains("Allure report"));
+    }
+
+    @Test
     void reportLinksToRunHistorySite() {
         Map<String, GateResult> results = new LinkedHashMap<>();
         results.put("smoke", smokeEnvFailure());

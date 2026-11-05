@@ -26,6 +26,7 @@ import java.util.Optional;
  * retries  prints the configured retry count for --tier
  * plan     impact analysis: --changed file-list | --full "reason"; writes test-plan.json, prints KEY=VALUE for $GITHUB_ENV
  *          evaluate --not-selected "reason" records a gate that this change did not need
+ * allure-categories  writes Allure's categories.json (ENV, CODE, flaky) from the gate config: --file
  * </pre>
  * Common options: --config quality-gates.yml --quarantine quarantine.json --out gate-results
  */
@@ -53,6 +54,7 @@ public final class Main {
             case "review" -> review(opts);
             case "retries" -> retries(opts);
             case "plan" -> plan(opts);
+            case "allure-categories" -> allureCategories(opts);
             default -> {
                 System.err.println("Unknown command: " + args[0]);
                 yield FAIL;
@@ -134,22 +136,24 @@ public final class Main {
         String stability = Files.exists(stabilityFile) ? Files.readString(stabilityFile) : null;
         boolean stabilityFailed = Files.exists(out.resolve("stability-failed"));
 
-        String markdown = new RunReport(env)
-                .withSelection(plan.map(ImpactPlanner.Plan::note).orElse(null))
-                .withStability(stability, stabilityFailed)
-                .render(results, review);
-        Files.writeString(out.resolve("run-report.md"), markdown);
-
         // One summary line per run for the run-history site (newest first, trends over time).
         int quarantineSize = QuarantineStore.load(Path.of(opts.getOrDefault("quarantine", "quarantine.json"))).size();
         RunHistory.Entry entry = RunHistory.entry(results, quarantineSize, env, java.time.Instant.now());
         entry.scope = plan.map(p -> p.scope).orElse("full");
+        entry.allure = Files.exists(out.resolve("allure/index.html"));
         if (stabilityFailed) {
             entry.verdict = "FAILED";
             entry.reason = "Stability check failed: a new or changed test did not pass every run";
             entry.owner = "PR author";
         }
         MAPPER.writeValue(out.resolve("history-entry.json").toFile(), entry);
+
+        String markdown = new RunReport(env)
+                .withSelection(plan.map(ImpactPlanner.Plan::note).orElse(null))
+                .withStability(stability, stabilityFailed)
+                .withAllure(entry.allure ? "runs/" + entry.folder + "/allure/" : null)
+                .render(results, review);
+        Files.writeString(out.resolve("run-report.md"), markdown);
 
         String summary = env.get("GITHUB_STEP_SUMMARY");
         if (summary != null && !summary.isBlank()) {
@@ -171,6 +175,37 @@ public final class Main {
         System.out.println("[gate] Quarantine review: " + summary.remaining + " remaining, released "
                 + summary.released + ", overdue " + summary.overdue);
         return summary.overdue.isEmpty() ? PASS : OVERDUE;
+    }
+
+    /**
+     * Allure groups failures into categories by message pattern. They are generated from the same
+     * ENV patterns the gates use, so the report and the gate verdict can never disagree.
+     */
+    static int allureCategories(Map<String, String> opts) throws IOException {
+        GateConfig config = GateConfig.load(Path.of(opts.getOrDefault("config", "quality-gates.yml")));
+        Path file = Path.of(required(opts, "file"));
+        if (file.getParent() != null) {
+            Files.createDirectories(file.getParent());
+        }
+        MAPPER.writeValue(file.toFile(), allureCategories(config));
+        return PASS;
+    }
+
+    static List<Map<String, Object>> allureCategories(GateConfig config) {
+        String env = config.envPatterns().stream().map(java.util.regex.Pattern::pattern)
+                .collect(java.util.stream.Collectors.joining("|"));
+        return List.of(
+                Map.of("name", "Environment failures (ENV): owner DevOps",
+                        "matchedStatuses", List.of("failed", "broken"),
+                        "messageRegex", "(?is).*(" + env + ").*"),
+                Map.of("name", "Environment failures (ENV): owner DevOps",
+                        "matchedStatuses", List.of("failed", "broken"),
+                        "traceRegex", "(?is).*(" + env + ").*"),
+                Map.of("name", "Product defects (CODE): owner PR author",
+                        "matchedStatuses", List.of("failed", "broken")),
+                Map.of("name", "Flaky: passed on retry",
+                        "matchedStatuses", List.of("passed"),
+                        "flaky", true));
     }
 
     static int plan(Map<String, String> opts) throws IOException {

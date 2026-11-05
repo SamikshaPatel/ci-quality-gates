@@ -182,6 +182,19 @@ class MainTest {
     }
 
     @Test
+    void allureCategoriesUseTheGateEnvPatterns() throws IOException {
+        Path file = tmp.resolve("allure-results/categories.json");
+        Map<String, String> o = Map.of("file", file.toString(), "config", "../quality-gates.yml");
+        assertEquals(Main.PASS, Main.allureCategories(o));
+        com.fasterxml.jackson.databind.JsonNode categories = MAPPER.readTree(file.toFile());
+        assertEquals(4, categories.size());
+        String envRegex = categories.get(0).get("messageRegex").asText();
+        assertTrue(java.util.regex.Pattern.compile(envRegex).matcher("java.net.ConnectException: Connection refused").matches());
+        assertFalse(java.util.regex.Pattern.compile(envRegex).matcher("expected: <200> but was: <201>").matches());
+        assertTrue(categories.get(3).get("flaky").asBoolean());
+    }
+
+    @Test
     void retriesComeFromConfig() throws IOException {
         Map<String, String> o = Map.of("tier", "regression", "config", "../quality-gates.yml");
         assertEquals(Main.PASS, Main.retries(o));

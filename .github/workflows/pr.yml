@@ -59,7 +59,7 @@ jobs:
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
       JIRA_PROJECT_KEY: ${{ vars.JIRA_PROJECT_KEY || secrets.JIRA_PROJECT_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # On a PR, check out the branch itself so a quarantine commit can be pushed back to it.
           # Elsewhere, the exact commit that triggered the run: a promotion verifies what it deploys,
@@ -131,6 +131,17 @@ jobs:
         if: success() && env.STABILITY_TESTS != ''
         run: scripts/stability-check.sh
 
+      - name: Cache the Allure command line
+        if: always()
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/allure
+          key: allure-2.46.1
+
+      - name: Allure report (every test, with trends)
+        if: always()
+        run: scripts/build-allure.sh || echo "::warning::The Allure report could not be built; the gates are unaffected."
+
       - name: Run report
         if: always()
         run: java -jar gate-evaluator/target/gate-evaluator.jar report
@@ -145,7 +156,7 @@ jobs:
 
       - name: Post run report on the PR
         if: always() && github.event_name == 'pull_request' && hashFiles('gate-results/run-report.md') != ''
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: run-report
           path: gate-results/run-report.md
@@ -167,7 +178,7 @@ jobs:
         # A separate comment per quarantine event: the sticky run report shows the PR's current
         # status, while this keeps a permanent record of what was quarantined and why.
         if: always() && hashFiles('gate-results/quarantine-notice.md') != ''
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: quarantine-${{ github.run_id }}
           path: gate-results/quarantine-notice.md
@@ -189,7 +200,7 @@ jobs:
 
       - name: Upload evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: gate-evidence-${{ env.DEMO_SCENARIO }}-${{ github.run_id }}
           path: evidence/

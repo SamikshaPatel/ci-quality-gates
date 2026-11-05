@@ -1,0 +1,18 @@
+# Actions are pinned to exact commits (supply-chain safety). Dependabot keeps those pins,
+# and the Maven dependencies, up to date with weekly PRs that run through the same gates.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      maven-minor-and-patch:
+        update-types: ["minor", "patch"]

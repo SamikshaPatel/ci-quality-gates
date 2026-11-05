@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.file.Path;
 
@@ -20,6 +21,7 @@ import java.nio.file.Path;
  * Shared Playwright setup for SauceDemo. One browser per class, a fresh context per test,
  * and a trace saved for every test so a failure can be replayed without rerunning it.
  */
+@ExtendWith(FailureScreenshot.class)
 abstract class BaseUiTest {
 
     private static Playwright playwright;
