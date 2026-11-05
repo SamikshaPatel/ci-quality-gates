@@ -44,7 +44,7 @@ The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.
 
 ## Demo scenarios
 
-Go to **Actions → Quality gates → Run workflow** and choose one. Each takes about 10 minutes.
+Go to **Actions → Quality gates → Run workflow** and choose one; each takes a few minutes. To see a scenario on a pull request instead, with the run report as a PR comment, put `[demo:<scenario>]` in the PR title, for example `[demo:flake-breach] Show quarantine on a PR`. Demo PRs are evidence and are never merged.
 
 | Scenario | What happens | Expected result |
 |---|---|---|
@@ -97,17 +97,18 @@ docs/                   test plan, ADRs, runbooks, evidence
 ## Workflows
 
 - **Quality gates** (`pr.yml`) runs on every PR and from the Run workflow button. Smoke runs first, then the critical tier, then the non-critical tier. It posts the run report on the PR and uploads evidence.
-- **Nightly** (`nightly.yml`) runs the full gates on `main`, then reviews quarantine: quarantined tests run and build a green streak. A test is released after 7 clean nights, and one older than 14 days fails the run.
+- **Nightly** (`nightly.yml`) runs the full gates on `main`, then reviews quarantine: quarantined tests run and build a green streak. A test is released after 7 clean nights, and one older than 14 days fails the run. Changes to `quarantine.json` arrive as a review PR, because `main` is protected even from the bot.
 - **Run history** (GitHub Pages, `gh-pages` branch): every run publishes its report to `runs/<date-time>_run<id>/`. The site lists all runs newest first, with filters for trigger, real or demo run, and result, plus trend charts of non-critical pass and flake rates and pipeline duration against the 10-minute budget. Demo runs are excluded from the trends. This plays the role a results server such as ReportPortal or Allure TestOps plays in larger teams.
 - **Release** (`release.yml`) runs on a `v*` tag. It runs the gates on the tagged commit and publishes a GitHub release with an evidence pack attached.
 
 ## Setup
 
-1. **Branch protection:** Settings → Branches → add a rule for `main`, require a PR, and require the **Smoke → Critical → Non-critical** status check.
+1. **Branch protection:** Settings → Rules → Rulesets → a branch ruleset on the default branch, active, with no bypass: restrict deletions, require a pull request (0 approvals for a solo repo, 1 or more in a team), require the **Smoke → Critical → Non-critical** status check with branches up to date, and block force pushes.
 2. **Secrets and variables:** Settings → Secrets and variables → Actions. Only credentials are secrets. The Jira site and project key are plain variables, because GitHub masks every secret value in logs and reports, which would turn ticket links into `***-1`.
 
    | Name | Kind | Purpose | Required |
    |---|---|---|---|
+   | `QUALITY_BOT_TOKEN` | Repository secret | Fine-grained token (Contents and Pull requests: read and write) so the bot's quarantine commits start a new run and nightly can open review PRs | Yes, once `main` is protected |
    | `JIRA_EMAIL`, `JIRA_API_TOKEN` | Repository secret | Quarantine tickets | No: without them, tickets are skipped and the report says so |
    | `JIRA_BASE_URL`, `JIRA_PROJECT_KEY` | Repository variable | Jira site and project for tickets | With the two secrets above |
    | `RB_USERNAME`, `RB_PASSWORD` | Restful-Booker auth | No: falls back to the public demo defaults |

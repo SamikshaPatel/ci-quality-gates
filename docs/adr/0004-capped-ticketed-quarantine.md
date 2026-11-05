@@ -16,4 +16,5 @@ Quarantining flaky tests protects delivery speed. Without limits, though, quaran
 
 ## Consequences
 - Quarantine stays a short-term holding area with an owner, never a permanent skip list.
-- The bot commits to PR branches and to `main`. That is acceptable for a single file the bot alone writes.
+- `main` is protected, so the bot never pushes to it. On a PR it commits to the PR's branch; nightly changes arrive as a review PR that passes the same gates and needs a human merge.
+- The bot pushes with its own token (`QUALITY_BOT_TOKEN`) rather than GitHub's built-in one, because pushes made with the built-in token deliberately start no new pipeline run, which would leave the PR's newest commit without a green check.
