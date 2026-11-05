@@ -1,3 +1,24 @@
 {
-  "tests": []
+  "tests" : [ {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#currencyFormattingFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (currency-format): fails first attempt, passes on retry",
+    "jira" : "CQGP-10",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#searchResultsOrderFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (search-order): fails first attempt, passes on retry",
+    "jira" : "CQGP-11",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  }, {
+    "id" : "io.github.samikshapatel.qg.api.faults.DemoFaultTests$NonCriticalFlakeFaults#additionalNeedsTrimFlaky",
+    "since" : "2026-11-05",
+    "reason" : "Passed only on retry: Simulated flaky failure (needs-trim): fails first attempt, passes on retry",
+    "jira" : "CQGP-12",
+    "greenStreak" : 0,
+    "quarantinedBy" : "https://github.com/SamikshaPatel/ci-quality-gates/actions/runs/42043588455"
+  } ]
 }
