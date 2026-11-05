@@ -131,6 +131,16 @@ jobs:
         if: success() && env.STABILITY_TESTS != ''
         run: scripts/stability-check.sh
 
+      - name: Failure history baseline (flakiness scores from main)
+        if: always()
+        run: |
+          if git fetch -q --depth 1 origin gh-pages 2>/dev/null && git cat-file -e FETCH_HEAD:flakiness.json 2>/dev/null; then
+            git show FETCH_HEAD:flakiness.json > gate-results/flakiness-baseline.json
+            jq -r '"[gate] Flakiness baseline: \(.tests | length) tests over \(.eligibleRuns) main runs"' gate-results/flakiness-baseline.json
+          else
+            echo "No flakiness scores published yet."
+          fi
+
       - name: Cache the Allure command line
         if: always()
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

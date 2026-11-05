@@ -22,6 +22,7 @@ public class RunReport {
     private String stabilityMarkdown;
     private boolean stabilityFailed;
     private String allurePath;
+    private final java.util.List<String> sections = new java.util.ArrayList<>();
 
     public RunReport(Map<String, String> env) {
         this.env = env;
@@ -30,6 +31,14 @@ public class RunReport {
     /** Which tests this change needed (impact analysis), shown under the result line. */
     public RunReport withSelection(String note) {
         this.selectionNote = note;
+        return this;
+    }
+
+    /** An extra markdown section (history of this run's failures, score-based quarantine). */
+    public RunReport withSection(String markdown) {
+        if (markdown != null && !markdown.isBlank()) {
+            sections.add(markdown.strip());
+        }
         return this;
     }
 
@@ -117,6 +126,9 @@ public class RunReport {
 
         if (stabilityMarkdown != null && !stabilityMarkdown.isBlank()) {
             md.append(stabilityMarkdown.strip()).append("\n\n");
+        }
+        for (String section : sections) {
+            md.append(section).append("\n\n");
         }
 
         md.append("**Evidence:** ");
