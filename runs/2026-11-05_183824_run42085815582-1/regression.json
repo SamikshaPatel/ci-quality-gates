@@ -1,0 +1,30 @@
+{
+  "tier" : "regression",
+  "verdict" : "PASS",
+  "attempt" : 1,
+  "executed" : 11,
+  "passed" : 10,
+  "failed" : 1,
+  "flaky" : 0,
+  "skipped" : 0,
+  "effectivePassed" : 10,
+  "passRate" : 90.9,
+  "flakeRate" : 0.0,
+  "passRateThreshold" : 80.0,
+  "maxFlakeRate" : 20.0,
+  "classification" : "NONE",
+  "reason" : null,
+  "action" : "Gate passed. 1 test(s) failed but the pass rate stays within threshold; tracked for follow-up.",
+  "owner" : null,
+  "runbook" : null,
+  "nextStep" : null,
+  "failures" : [ {
+    "id" : "io.github.samikshapatel.qg.ui.StoreRegressionTest#cartKeepsItemsAcrossPages",
+    "status" : "FAILED",
+    "classification" : "CODE",
+    "message" : "Locator expected to have text"
+  } ],
+  "flakyTests" : [ ],
+  "newlyQuarantined" : [ ],
+  "firstAttemptReason" : null
+}

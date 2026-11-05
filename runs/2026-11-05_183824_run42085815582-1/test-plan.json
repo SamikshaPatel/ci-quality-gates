@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`gate-evaluator/pom.xml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ "gate-evaluator/pom.xml", "pom.xml" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
