@@ -19,7 +19,7 @@ import java.util.Optional;
  * Command line for the pipeline (GitHub Actions and Jenkins call the same commands).
  *
  * <pre>
- * evaluate --tier smoke|critical|regression --reports dir[,dir] [--attempt 1|2]
+ * evaluate --tier smoke|contract|critical|regression --reports dir[,dir] [--attempt 1|2]
  *          exit 0 = gate passed, 1 = gate failed, 3 = flaky tests quarantined: rerun the tier
  * report   writes gate-results/run-report.md and appends it to the GitHub job summary
  * review   nightly quarantine review: green streaks, releases, age alerts (exit 2 = overdue)

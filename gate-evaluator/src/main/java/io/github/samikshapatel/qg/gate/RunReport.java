@@ -15,7 +15,7 @@ import java.util.Optional;
 public class RunReport {
 
     public static final String MARKER = "<!-- ci-quality-gates:run-report -->";
-    static final List<String> ORDER = List.of("smoke", "critical", "regression");
+    static final List<String> ORDER = List.of("smoke", "contract", "critical", "regression");
 
     private final Map<String, String> env;
 
@@ -206,6 +206,7 @@ public class RunReport {
     static String label(String tier) {
         return switch (tier) {
             case "smoke" -> "Smoke";
+            case "contract" -> "Contract";
             case "critical" -> "Critical tier";
             case "regression" -> "Non-critical tier";
             default -> tier;

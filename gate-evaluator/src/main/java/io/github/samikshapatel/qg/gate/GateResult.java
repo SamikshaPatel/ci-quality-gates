@@ -57,7 +57,7 @@ public class GateResult {
         String base = "≥ " + pct(passRateThreshold) + " pass";
         if (maxFlakeRate != null) {
             base += ", ≤ " + pct(maxFlakeRate) + " flaky";
-        } else if ("smoke".equals(tier) || "critical".equals(tier)) {
+        } else if ("smoke".equals(tier) || "contract".equals(tier) || "critical".equals(tier)) {
             base += "critical".equals(tier) ? ", no retry credit" : ", no retries";
         }
         return base;

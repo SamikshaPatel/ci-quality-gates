@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 /** Typed view of quality-gates.yml. */
 public record GateConfig(
         double smokePassRate,
+        double contractPassRate,
         double criticalPassRate,
         boolean criticalFlakyCountsAsFailure,
         double noncriticalPassRate,
@@ -39,6 +40,7 @@ public record GateConfig(
     @SuppressWarnings("unchecked")
     static GateConfig fromMap(Map<String, Object> root) {
         Map<String, Object> smoke = section(root, "smoke");
+        Map<String, Object> contract = section(root, "contract");
         Map<String, Object> critical = section(root, "critical");
         Map<String, Object> noncritical = section(root, "noncritical");
         Map<String, Object> quarantine = section(root, "quarantine");
@@ -56,6 +58,7 @@ public record GateConfig(
 
         return new GateConfig(
                 number(smoke, "pass_rate"),
+                number(contract, "pass_rate"),
                 number(critical, "pass_rate"),
                 Boolean.TRUE.equals(critical.getOrDefault("flaky_counts_as_failure", true)),
                 number(noncritical, "pass_rate"),

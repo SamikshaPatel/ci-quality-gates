@@ -101,6 +101,34 @@ class GateEvaluatorTest {
     }
 
     @Test
+    void contractPassesWhenEverySchemaMatches() {
+        GateResult r = run("contract", 1, passing("api.BookingContractTest", 4));
+        assertEquals(GateResult.Verdict.PASS, r.verdict);
+    }
+
+    @Test
+    void contractSchemaMismatchIsCodeAndOwnedByApiProvider() {
+        List<TestResult> results = passing("api.BookingContractTest", 3);
+        results.add(t("api.BookingContractTest", "getBookingMatchesSchema", Status.FAILED,
+                "java.lang.AssertionError", "Response body doesn't match expectation. object has missing required properties ([\"totalprice\"])"));
+        GateResult r = run("contract", 1, results);
+        assertEquals(GateResult.Verdict.FAIL, r.verdict);
+        assertEquals("CODE", r.classification);
+        assertEquals("PR author (API provider)", r.owner);
+        assertTrue(r.reason.startsWith("Contract gate breached: pass rate 75%"), r.reason);
+        assertTrue(r.nextStep.contains("expand, then contract"), r.nextStep);
+    }
+
+    @Test
+    void contractWithApiDownIsEnv() {
+        List<TestResult> results = List.of(t("api.BookingContractTest", "authTokenMatchesSchema", Status.FAILED,
+                "java.net.ConnectException", "Connection refused"));
+        GateResult r = run("contract", 1, results);
+        assertEquals("ENV", r.classification);
+        assertEquals("DevOps", r.owner);
+    }
+
+    @Test
     void criticalGivesNoRetryCredit() {
         List<TestResult> results = passing("api.BookingCriticalTest", 8);
         results.add(t("api.BookingCriticalTest", "createBookingReturnsId", Status.FLAKY, "AssertionError", "blip"));

@@ -1,14 +1,23 @@
 # CI contract
 
-**A build is green only when all three gates pass, in order.** QA owns this contract; Development and DevOps rely on it. Every number below lives in [`quality-gates.yml`](quality-gates.yml), and changing one is a reviewed PR.
+**A build is green only when the evaluator is trustworthy, the code is safe, and all four test gates pass, in order.** QA owns this contract; Development and DevOps rely on it. Every number below lives in [`quality-gates.yml`](quality-gates.yml), and changing one is a reviewed PR.
+
+## Before the test gates
+
+| Gate | Rule | Where it is enforced |
+|---|---|---|
+| Evaluator unit tests and coverage | The evaluator's own tests pass and cover at least 80% of its lines ([ADR-0009](docs/adr/0009-coverage-and-security-gates.md)) | JaCoCo in `gate-evaluator/pom.xml`; fails the job before any test gate runs |
+| CodeQL | No new security alert from the security-extended queries | `security.yml`, enforced by the ruleset's code scanning rule |
+| Dependency review | A PR may not add a dependency with a known high or critical vulnerability | `security.yml`, a required status check |
 
 ## What green means
 
 | Order | Gate | Tests | Pass rule | Retries | Blocks merge |
 |---|---|---|---|---|---|
 | 1 | Smoke | `@Tag("smoke")` | 100% | 0: a retry would hide an outage | Yes, and later gates are skipped |
-| 2 | Critical tier | `@Tag("critical")` | 100%, a pass on retry still fails | 1, used only to detect flakiness | Yes |
-| 3 | Non-critical tier | `@Tag("regression")` | Pass rate ≥ 80% and flake rate ≤ 20% | 1 | Yes |
+| 2 | Contract | `@Tag("contract")` | 100%: every API response matches its JSON schema | 0: a schema mismatch is never flaky | Yes, and later gates are skipped |
+| 3 | Critical tier | `@Tag("critical")` | 100%, a pass on retry still fails | 1, used only to detect flakiness | Yes |
+| 4 | Non-critical tier | `@Tag("regression")` | Pass rate ≥ 80% and flake rate ≤ 20% | 1 | Yes |
 
 - **Pass rate** counts tests that passed on any attempt. **Flake rate** counts tests that passed only on retry.
 - A **quarantined** test is skipped by the PR gates, so it no longer affects the gate result. It keeps running nightly.
@@ -22,6 +31,7 @@ The gate evaluator tags each failure **ENV** (timeout, 5xx, unreachable host) or
 |---|---|---|---|
 | Smoke, ENV | Build failed, PR blocked, later gates skipped | DevOps | [smoke-failure](docs/runbooks/smoke-failure.md) |
 | Smoke, CODE | Build failed, PR blocked, later gates skipped | PR author | [smoke-failure](docs/runbooks/smoke-failure.md) |
+| Contract, schema mismatch | Build failed, PR blocked, later gates skipped | PR author (API provider) | [contract-failure](docs/runbooks/contract-failure.md) |
 | Critical tier, any failure or flake | Build failed, PR blocked | PR author, QA reviews | [critical-failure](docs/runbooks/critical-failure.md) |
 | Non-critical, pass rate below threshold | Build failed, PR blocked | PR author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |
 | Non-critical, flake rate over limit | Flaky tests quarantined, ticket opened per test, gate reruns | QA, with the test's author | [quality-gate-failure](docs/runbooks/quality-gate-failure.md) |

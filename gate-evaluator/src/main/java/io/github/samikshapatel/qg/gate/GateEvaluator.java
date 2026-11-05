@@ -13,6 +13,7 @@ import java.util.function.Function;
  *
  * <pre>
  * smoke       100% pass, no retries. Failures tagged ENV or CODE; owner follows the tag.
+ * contract    100% pass, no retries. API responses must match their JSON schemas.
  * critical    100% pass; a pass on retry still fails (no retry credit). Never quarantined.
  * regression  pass rate ≥ threshold (flaky passes count), and flake rate ≤ max.
  *             Flake breach on attempt 1 → quarantine the flaky tests and rerun, unless a
@@ -49,10 +50,36 @@ public class GateEvaluator {
 
         return switch (tier) {
             case "smoke" -> smoke(r, results);
+            case "contract" -> contract(r, results);
             case "critical" -> critical(r, results);
             case "regression" -> regression(r, results, attempt, quarantine, ticketer, today, runUrl);
             default -> throw new IllegalArgumentException("Unknown tier: " + tier);
         };
+    }
+
+    private GateResult contract(GateResult r, List<TestResult> results) {
+        r.passRateThreshold = config.contractPassRate();
+        List<TestResult> failures = results.stream()
+                .filter(t -> t.status() == Status.FAILED || t.status() == Status.FLAKY).toList();
+        if (r.passRate >= config.contractPassRate() && failures.isEmpty()) {
+            return pass(r);
+        }
+        Kind kind = Classifier.overall(failures, config.envPatterns());
+        r.verdict = GateResult.Verdict.FAIL;
+        r.classification = kind.name();
+        addFailures(r, failures);
+        r.reason = "Contract gate breached: pass rate " + GateResult.pct(r.passRate) + ", below "
+                + GateResult.pct(config.contractPassRate()) + " threshold (" + failures.size() + " failed, classified " + kind + ")";
+        r.action = "Build marked failed, PR blocked. Later gates skipped: consumers of this API would break.";
+        if (kind == Kind.ENV) {
+            setOwner(r, config.owner("smoke_env"));
+            r.nextStep = "The API was unreachable during the contract check. Check the service containers, then rerun.";
+        } else {
+            setOwner(r, config.owner("contract"));
+            r.nextStep = "A response changed shape. If the change is intended, add the new field next to the old one "
+                    + "(expand, then contract) and update the schema in api-tests/src/test/resources/schemas/ in this PR.";
+        }
+        return r;
     }
 
     private GateResult smoke(GateResult r, List<TestResult> results) {
@@ -239,6 +266,7 @@ public class GateEvaluator {
     static String tierLabel(String tier) {
         return switch (tier) {
             case "smoke" -> "Smoke";
+            case "contract" -> "Contract";
             case "critical" -> "Critical";
             case "regression" -> "Quality";
             default -> tier;

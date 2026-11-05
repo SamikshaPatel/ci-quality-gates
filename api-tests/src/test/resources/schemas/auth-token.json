@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Auth token",
+  "description": "Response of POST /auth with valid credentials. A 'reason' field means login failed, so it is not allowed here.",
+  "type": "object",
+  "required": ["token"],
+  "properties": {
+    "token": { "type": "string", "minLength": 1 }
+  },
+  "not": { "required": ["reason"] }
+}

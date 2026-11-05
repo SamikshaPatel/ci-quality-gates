@@ -66,7 +66,7 @@
       <thead>
         <tr>
           <th>When</th><th>Trigger</th><th>Scenario</th><th>Branch</th><th>Commit</th>
-          <th>Smoke</th><th>Critical</th><th>Non-critical</th><th>Result</th><th>Duration</th><th></th>
+          <th>Smoke</th><th>Contract</th><th>Critical</th><th>Non-critical</th><th>Result</th><th>Duration</th><th></th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
@@ -77,6 +77,7 @@
 <script>
 const BUDGET_MIN = 10;
 const QUARANTINE_CAP = 5;
+const CONTRACT_SINCE = '2026-11-05T15:00:00Z'; // the contract gate did not exist before this
 let runs = [];
 
 const el = (tag, opts = {}, ...children) => {
@@ -110,7 +111,8 @@ const ago = iso => {
   return hrs < 48 ? `${hrs} h ago` : `${Math.round(hrs / 24)} days ago`;
 };
 
-function gateChip(g) {
+function gateChip(g, notYetAGate) {
+  if (!g && notYetAGate) return el('span', { className: 'chip skip', text: 'n/a', title: 'This gate did not exist yet' });
   if (!g) return el('span', { className: 'chip skip', text: '— skipped' });
   if (g.verdict === 'PASS' && g.attempt > 1) {
     return el('span', { className: 'chip warn', text: `✓ ${g.passRate}%`, title: 'Passed after quarantining flaky tests' });
@@ -233,6 +235,7 @@ function renderTable() {
       el('td', { className: 'mono', text: r.branch || '—' }),
       el('td', { className: 'mono', text: r.sha || '—' }),
       el('td', {}, gateChip(r.gates && r.gates.smoke)),
+      el('td', {}, gateChip(r.gates && r.gates.contract, r.date < CONTRACT_SINCE)),
       el('td', {}, gateChip(r.gates && r.gates.critical)),
       el('td', {}, gateChip(r.gates && r.gates.regression)),
       el('td', {}, resultChip(r)),
@@ -243,7 +246,7 @@ function renderTable() {
   });
   if (!shown.length) {
     const td = el('td', { className: 'empty', text: 'No runs match these filters.' });
-    td.colSpan = 11;
+    td.colSpan = 12;
     body.append(el('tr', {}, td));
   }
   document.getElementById('count').textContent = `${shown.length} of ${runs.length} runs`;

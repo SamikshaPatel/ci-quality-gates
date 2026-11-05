@@ -49,10 +49,13 @@ pipeline {
         stage('Gate 1 — Smoke') {
             steps { sh 'scripts/run-gate.sh smoke' }
         }
-        stage('Gate 2 — Critical tier') {
+        stage('Gate 2 — Contract') {
+            steps { sh 'scripts/run-gate.sh contract' }
+        }
+        stage('Gate 3 — Critical tier') {
             steps { sh 'scripts/run-gate.sh critical' }
         }
-        stage('Gate 3 — Non-critical tier') {
+        stage('Gate 4 — Non-critical tier') {
             steps { sh 'scripts/run-regression.sh' }
         }
     }

@@ -2,16 +2,18 @@
 
 **A CI pipeline whose quality gates are a written, enforced contract.** QA defines what a green build means, the pipeline enforces it from one config file, and every failure says what broke, who owns it and what to do next.
 
-This is a portfolio project. The test suites are small on purpose: 25 tests. The design, the decisions and the failure handling are the point.
+This is a portfolio project. The test suites are small on purpose: 29 tests. The design, the decisions and the failure handling are the point.
 
 ## What green means
 
 ```mermaid
 flowchart TD
-    PR[PR opened] --> B[Build + evaluator unit tests]
+    PR[PR opened] --> B[Evaluator tests<br/>≥80% line coverage]
     B --> S{Smoke<br/>100%, no retries}
     S -- fail --> SX[Hard stop: PR blocked<br/>tagged ENV or CODE]
-    S -- pass --> C{Critical tier<br/>100%, no retry credit}
+    S -- pass --> K{Contract<br/>responses match schemas}
+    K -- fail --> KX[PR blocked<br/>a consumer would break]
+    K -- pass --> C{Critical tier<br/>100%, no retry credit}
     C -- fail --> CX[PR blocked<br/>never quarantined]
     C -- pass --> N{Non-critical tier<br/>≥80% pass, ≤20% flaky}
     N -- flake breach --> Q[Quarantine flaky tests<br/>capped, Jira ticket each]
@@ -23,10 +25,11 @@ flowchart TD
 | Gate | Pass rule | Retries | On failure |
 |---|---|---|---|
 | Smoke | 100% | 0 | Hard stop, later gates skipped, failure tagged ENV or CODE |
+| Contract | 100%, every response matches its JSON schema | 0 | PR blocked, later gates skipped |
 | Critical tier | 100%, a pass on retry still fails | 1, to detect flakiness | PR blocked, never quarantined |
 | Non-critical tier | ≥ 80% pass and ≤ 20% flaky | 1 | Flake breach: quarantine, ticket, rerun. Otherwise the PR is blocked |
 
-The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.md)**. Every number lives in **[quality-gates.yml](quality-gates.yml)**.
+Beside these, the **Security** workflow runs CodeQL and dependency review on every PR, and the evaluator must keep 80% line coverage before any test gate runs. The full rules, with owners and runbooks, are in **[CI_CONTRACT.md](CI_CONTRACT.md)**. Every number lives in **[quality-gates.yml](quality-gates.yml)**.
 
 ## Proof
 
@@ -104,6 +107,7 @@ docs/                   test plan, ADRs, runbooks, evidence
 ## Setup
 
 1. **Branch protection:** Settings → Rules → Rulesets → a branch ruleset on the default branch, active, with no bypass: restrict deletions, require a pull request (0 approvals for a solo repo, 1 or more in a team), require the **Smoke → Critical → Non-critical** status check with branches up to date, and block force pushes.
+1b. **Security checks in the ruleset:** in `protect-main`, under **Require status checks to pass**, add **Dependency review**; then tick **Require code scanning results**, add **CodeQL**, and set security alerts to **High or higher** and alerts to **Errors**. Turn on **Settings → Code security → Secret scanning** and **Push protection**.
 2. **Secrets and variables:** Settings → Secrets and variables → Actions. Only credentials are secrets. The Jira site and project key are plain variables, because GitHub masks every secret value in logs and reports, which would turn ticket links into `***-1`.
 
    | Name | Kind | Purpose | Required |
