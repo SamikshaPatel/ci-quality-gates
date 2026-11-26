@@ -1,0 +1,9 @@
+{
+  "scope" : "full",
+  "reason" : "Shared, build or pipeline file changed (`.github/workflows/promote.yml`), so the full suite runs",
+  "modules" : [ "api-tests", "ui-tests" ],
+  "selectedTiers" : [ "smoke", "contract", "critical", "regression" ],
+  "changedFiles" : [ ".github/workflows/promote.yml", ".github/workflows/security.yml" ],
+  "stabilityTests" : [ ],
+  "stabilityRuns" : 3
+}
